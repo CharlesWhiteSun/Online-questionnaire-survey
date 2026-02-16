@@ -1,4 +1,5 @@
 import json
+import re
 import sqlite3
 import uuid
 from datetime import datetime
@@ -22,10 +23,58 @@ DB_PATH = BASE_DIR / "survey.db"
 COOKIE_NAME = "survey_client_id"
 
 app = Flask(__name__)
+INDEX_PATTERN = re.compile(r"^(?P<main>\d+)(?:-(?P<sub>\d+))?\.")
 
 
 def print_startup_info() -> None:
     print("=" * 60)
+
+
+def get_index_parts(label: str) -> tuple[str | None, str | None]:
+    matched = INDEX_PATTERN.match(label.strip())
+    if not matched:
+        return None, None
+    return matched.group("main"), matched.group("sub")
+
+
+def build_questionnaire_rows(fields: list[dict]) -> list[list[dict]]:
+    rows: list[list[dict]] = []
+    pending_plain: list[dict] = []
+    index = 0
+
+    while index < len(fields):
+        field = fields[index]
+        main, sub = get_index_parts(field.get("label", ""))
+
+        if sub is not None and main is not None:
+            if pending_plain:
+                rows.append(pending_plain)
+                pending_plain = []
+
+            group = [field]
+            index += 1
+            while index < len(fields):
+                next_field = fields[index]
+                next_main, next_sub = get_index_parts(next_field.get("label", ""))
+                if next_sub is None or next_main != main:
+                    break
+                group.append(next_field)
+                index += 1
+
+            for start in range(0, len(group), 2):
+                rows.append(group[start : start + 2])
+            continue
+
+        pending_plain.append(field)
+        if len(pending_plain) == 2:
+            rows.append(pending_plain)
+            pending_plain = []
+        index += 1
+
+    if pending_plain:
+        rows.append(pending_plain)
+
+    return rows
     print(f"問卷：{SURVEY_TITLE}")
     print(f"開放時間：{OPEN_START_AT:%Y-%m-%d %H:%M} ~ {OPEN_END_AT:%Y-%m-%d %H:%M}")
     print(f"短網址路徑：http://<你的內網IP>:5000/q/{SURVEY_SLUG}")
@@ -155,11 +204,15 @@ def survey(slug: str):
         return response
 
     existing_answers = get_existing_answers(client_token)
+    basic_fields = [field for field in FORM_DEFINITION if field.get("section") == "basic"]
+    questionnaire_fields = [field for field in FORM_DEFINITION if field.get("section") != "basic"]
+    questionnaire_rows = build_questionnaire_rows(questionnaire_fields)
     response = make_response(
         render_template(
             "form.html",
             survey_title=SURVEY_TITLE,
-            fields=FORM_DEFINITION,
+            basic_fields=basic_fields,
+            questionnaire_rows=questionnaire_rows,
             existing=existing_answers,
             open_start=OPEN_START_AT,
             open_end=OPEN_END_AT,
