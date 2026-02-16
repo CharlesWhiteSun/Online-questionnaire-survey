@@ -30,8 +30,17 @@
       border-radius: 999px;
       padding: 6px 12px;
       font-weight: 600;
-      margin-top: 6px;
     }
+    .metric-date { background: #f4f9ff; border-color: #cfe2ff; }
+    .metric-time { background: #eefaf1; border-color: #bde5c8; }
+    .metric-window {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .window-separator { color: #57606a; font-weight: 600; padding: 0 2px; }
     .meta { margin-top: 12px; color: #555; }
     @media (max-width: 680px) {
       .topbar { align-items: stretch; flex-direction: column; }
@@ -54,7 +63,13 @@
     <div class="meta">
       <div>{{ ui.survey_label }}：{{ survey_title }}</div>
       <div>{{ ui.open_time_label }}：</div>
-      <div class="metric-chip">{{ open_window_text }}</div>
+      <div class="metric-window">
+        <span class="metric-chip metric-date">{{ open_window_parts.start_date }}</span>
+        <span class="metric-chip metric-time">{{ open_window_parts.start_time }}</span>
+        <span class="window-separator">~</span>
+        <span class="metric-chip metric-date">{{ open_window_parts.end_date }}</span>
+        <span class="metric-chip metric-time">{{ open_window_parts.end_time }}</span>
+      </div>
     </div>
   </div>
 </body>

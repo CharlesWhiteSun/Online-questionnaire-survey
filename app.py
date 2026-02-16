@@ -213,12 +213,21 @@ def localize_form_definition(lang: str) -> list[dict]:
     return localized
 
 
-def format_datetime_by_lang(value: datetime, lang: str) -> str:
-    return value.strftime("%b %d, %Y %H:%M")
+def format_date_by_lang(value: datetime, lang: str) -> str:
+    return value.strftime("%b %d, %Y")
 
 
-def build_open_window_text(lang: str) -> str:
-    return f"{format_datetime_by_lang(OPEN_START_AT, lang)} ~ {format_datetime_by_lang(OPEN_END_AT, lang)}"
+def format_time(value: datetime) -> str:
+    return value.strftime("%H:%M")
+
+
+def build_open_window_parts(lang: str) -> dict:
+    return {
+        "start_date": format_date_by_lang(OPEN_START_AT, lang),
+        "start_time": format_time(OPEN_START_AT),
+        "end_date": format_date_by_lang(OPEN_END_AT, lang),
+        "end_time": format_time(OPEN_END_AT),
+    }
 
 
 
@@ -389,7 +398,7 @@ def home():
 def survey(slug: str):
     lang = get_lang()
     ui = build_ui_texts(lang)
-    open_window_text = build_open_window_text(lang)
+    open_window_parts = build_open_window_parts(lang)
 
     if slug != SURVEY_SLUG:
         return tr("找不到問卷", lang), 404
@@ -407,7 +416,7 @@ def survey(slug: str):
                 title=tr(CLOSED_MESSAGE_TITLE, lang),
                 message=tr(CLOSED_MESSAGE_BODY, lang),
                 survey_title=tr(SURVEY_TITLE, lang),
-                open_window_text=open_window_text,
+                open_window_parts=open_window_parts,
                 ui=ui,
                 lang_urls=lang_urls,
                 current_lang=lang,
@@ -450,7 +459,7 @@ def survey(slug: str):
             basic_fields=basic_fields,
             questionnaire_rows=questionnaire_rows,
             existing=existing_answers,
-            open_window_text=open_window_text,
+            open_window_parts=open_window_parts,
             ui=ui,
             lang_urls=lang_urls,
             current_lang=lang,
