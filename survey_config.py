@@ -55,6 +55,7 @@ SUCCESS_MESSAGE = "已成功儲存。若您再次開啟同一連結並提交，�
 
 FORM_DEFINITION = [
     {
+        "section": "basic",
         "type": "text_pair",
         "name": "department_person_pair",
         "label": "訪談部門/人員",
@@ -70,6 +71,7 @@ FORM_DEFINITION = [
         },
     },
     {
+        "section": "basic",
         "type": "text_pair",
         "name": "main_system_role_pair",
         "label": "主測系統/角色",
