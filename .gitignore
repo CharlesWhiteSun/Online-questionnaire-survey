@@ -1,0 +1,30 @@
+__pycache__/
+*.pyc
+.venv/
+survey.db
+*.db
+*.sqlite3
+*.log
+
+# SQLite transient files
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment files
+.env
+.env.*
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Local extracted/generated docs
+file/questionnaire_extracted.txt
+
+# Documents
+*.pdf
