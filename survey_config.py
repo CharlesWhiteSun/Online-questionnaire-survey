@@ -41,7 +41,7 @@ def load_window_from_param_file() -> tuple[datetime, datetime]:
 
 
 SURVEY_SLUG = "at"
-SURVEY_TITLE = "自動化測試導入需求訪談表"
+SURVEY_TITLE = "自動化測試導入 PoC 需求訪談表"
 
 OPEN_START_AT, OPEN_END_AT = load_window_from_param_file()
 

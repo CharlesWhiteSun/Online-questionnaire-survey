@@ -57,3 +57,11 @@ python app.py
 ## 6) 依 PDF 轉入的問卷內容
 
 題目已根據 `file/自動化測試導入 需求訪談表.pdf` 建立於 `survey_config.py` 的 `FORM_DEFINITION`。
+
+## 7) 語系切換（i18n）
+
+- 支援語系：`zh-TW`、`en`
+- 頁首右上有語系切換按鈕（中文 / EN）
+- 也可透過網址參數切換：
+	- `http://<你的內網IP>:5000/q/at?lang=zh-TW`
+	- `http://<你的內網IP>:5000/q/at?lang=en`

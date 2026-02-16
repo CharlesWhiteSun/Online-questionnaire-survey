@@ -1,15 +1,65 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="{{ html_lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ survey_title }}</title>
   <style>
+    :root { --block-gap: 18px; }
     body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; margin: 0; background: #f6f8fa; color: #1f2328; }
     .container { max-width: 880px; margin: 20px auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    h1 { margin-top: 0; }
-    .meta { background: #eef6ff; border: 1px solid #cce1ff; padding: 12px; border-radius: 8px; margin-bottom: 18px; }
-    .section { border: 1px solid #d8dee4; border-radius: 10px; padding: 16px; margin-bottom: 18px; }
+    h1 { margin-top: 0; margin-bottom: 0; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .title-block { flex: 1 1 auto; min-width: 0; }
+    .title-block h1 { line-height: 1.35; word-break: break-word; }
+    .lang-switch { display: inline-flex; gap: 6px; flex-shrink: 0; }
+    .lang-btn {
+      text-decoration: none;
+      color: #1f2328;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .lang-btn.active {
+      background: #e7f1ff;
+      border-color: #96c2ff;
+      font-weight: 600;
+    }
+    .metric-chip {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #cfe2ff;
+      background: #f4f9ff;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .page-stack { display: grid; gap: var(--block-gap); }
+    .reminder-item {
+      margin-top: 0;
+      border: 1px solid #ffe2b7;
+      background: #fff9f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .reminder-item::before {
+      content: "💡 ";
+      font-weight: 700;
+      color: #9a6700;
+    }
+    .meta { background: #eef6ff; border: 1px solid #cce1ff; padding: 12px; border-radius: 8px; margin-bottom: 0; }
+    .section { border: 1px solid #d8dee4; border-radius: 10px; padding: 16px; margin-bottom: 0; }
     .section h2 { margin: 0; font-size: 20px; }
     .collapse-header {
       display: flex;
@@ -67,11 +117,16 @@
     .other { margin-top: 8px; }
     .submit-button { background: #0969da; color: white; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-size: 15px; }
     .submit-button:hover { background: #0550ae; }
+    form { margin: 0; display: grid; gap: var(--block-gap); }
     @media (max-width: 860px) {
       .questionnaire-row { grid-template-columns: 1fr; margin-bottom: 10px; }
       .questionnaire-item.empty { display: none; }
     }
-    @media (max-width: 680px) { .pair { grid-template-columns: 1fr; } }
+    @media (max-width: 680px) {
+      .topbar { align-items: stretch; flex-direction: column; }
+      .lang-switch { justify-content: flex-end; }
+      .pair { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -108,7 +163,7 @@
         </div>
         {% if field.allow_other %}
         <div class="other">
-          <input type="text" name="{{ field.name }}_other" placeholder="其他：請填寫" value="{{ existing.get(field.name ~ '_other', '') }}">
+          <input type="text" name="{{ field.name }}_other" placeholder="{{ ui.other_placeholder }}" value="{{ existing.get(field.name ~ '_other', '') }}">
         </div>
         {% endif %}
       {% endif %}
@@ -116,17 +171,26 @@
   {%- endmacro %}
 
   <div class="container">
-    <h1>{{ survey_title }}</h1>
-    <div class="meta">
-      <div>開放時間：{{ open_start.strftime('%Y-%m-%d %H:%M') }} ~ {{ open_end.strftime('%Y-%m-%d %H:%M') }}</div>
-      <div>短網址路徑：{{ short_path }}</div>
-      <div>同一裝置可重填，系統會覆寫先前提交。</div>
+    <div class="topbar">
+      <div class="title-block">
+        <h1>{{ survey_title }}</h1>
+      </div>
+      <div class="lang-switch">
+        <a class="lang-btn {% if current_lang == 'zh-TW' %}active{% endif %}" href="{{ lang_urls['zh-TW'] }}">{{ ui.lang_zh }}</a>
+        <a class="lang-btn {% if current_lang == 'en' %}active{% endif %}" href="{{ lang_urls['en'] }}">{{ ui.lang_en }}</a>
+      </div>
     </div>
+    <div class="page-stack">
+      <div class="meta">
+        <div>{{ ui.open_time_label }}：</div>
+        <div class="metric-chip">{{ open_window_text }}</div>
+      </div>
+      <div class="reminder-item">{{ ui.record_update_hint }}</div>
 
-    <form method="post">
+      <form method="post">
       <div class="section" data-collapsible-card>
         <div class="collapse-header">
-          <h2>基本資料</h2>
+          <h2>{{ ui.basic_title }}</h2>
           <button class="collapse-toggle" type="button" data-collapse-toggle aria-expanded="true" aria-controls="section-basic-content">
             <span data-toggle-icon>▾</span>
           </button>
@@ -140,7 +204,7 @@
 
       <div class="section" data-collapsible-card>
         <div class="collapse-header">
-          <h2>問卷欄位</h2>
+          <h2>{{ ui.questionnaire_title }}</h2>
           <button class="collapse-toggle" type="button" data-collapse-toggle aria-expanded="true" aria-controls="section-questionnaire-content">
             <span data-toggle-icon>▾</span>
           </button>
@@ -171,8 +235,9 @@
         </div>
       </div>
 
-      <button class="submit-button" type="submit">送出/更新</button>
-    </form>
+        <button class="submit-button" type="submit">{{ ui.submit_button }}</button>
+      </form>
+    </div>
   </div>
 
   <script>
