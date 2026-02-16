@@ -1,13 +1,103 @@
 <!doctype html>
-<html lang="{{ html_lang }}">
+<html lang="{{ html_lang }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ survey_title }}</title>
   <style>
-    :root { --block-gap: 18px; }
-    body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; margin: 0; background: #f6f8fa; color: #1f2328; }
-    .container { max-width: 880px; margin: 20px auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    :root {
+      --block-gap: 18px;
+      --bg-page: #f6f8fa;
+      --text-main: #1f2328;
+      --text-subtle: #57606a;
+      --bg-surface: #ffffff;
+      --border-soft: #d8dee4;
+      --shadow-soft: 0 2px 8px rgba(0,0,0,0.08);
+      --bg-meta: #eef6ff;
+      --border-meta: #cce1ff;
+      --bg-chip-date: #f4f9ff;
+      --border-chip-date: #cfe2ff;
+      --bg-chip-time: #eefaf1;
+      --border-chip-time: #bde5c8;
+      --bg-reminder: #fff9f0;
+      --border-reminder: #ffe2b7;
+      --text-reminder-icon: #9a6700;
+      --bg-label: #f2f8ff;
+      --border-label: #d6e9ff;
+      --bg-btn: #f6f8fa;
+      --bg-btn-hover: #eef2f6;
+      --border-btn: #d0d7de;
+      --text-btn: #1f2328;
+      --bg-primary: #0969da;
+      --bg-primary-hover: #0550ae;
+      --text-primary: #ffffff;
+      --bg-input: #ffffff;
+      --border-input: #d0d7de;
+      --theme-light: #9ec5ff;
+      --theme-forest: #3d7a5f;
+      --theme-dark: #394553;
+    }
+    html[data-theme="forest"] {
+      --bg-page: #eaf3ee;
+      --text-main: #17241f;
+      --text-subtle: #355246;
+      --bg-surface: #f7fbf8;
+      --border-soft: #b9cec2;
+      --shadow-soft: 0 2px 10px rgba(23,36,31,0.10);
+      --bg-meta: #e6f2eb;
+      --border-meta: #bad5c6;
+      --bg-chip-date: #eef8f2;
+      --border-chip-date: #bedcc9;
+      --bg-chip-time: #e4f4ea;
+      --border-chip-time: #abd3b9;
+      --bg-reminder: #f4fbf6;
+      --border-reminder: #cde4d4;
+      --text-reminder-icon: #2b6a4d;
+      --bg-label: #edf7f1;
+      --border-label: #c7dece;
+      --bg-btn: #eff7f2;
+      --bg-btn-hover: #e1f0e8;
+      --border-btn: #b5ccbf;
+      --text-btn: #1f3a2f;
+      --bg-primary: #2f6e54;
+      --bg-primary-hover: #255842;
+      --text-primary: #ffffff;
+      --bg-input: #ffffff;
+      --border-input: #b7cfc1;
+    }
+    html[data-theme="dark"] {
+      --bg-page: #11161c;
+      --text-main: #e6edf3;
+      --text-subtle: #a8b3bf;
+      --bg-surface: #1a2129;
+      --border-soft: #34404d;
+      --shadow-soft: 0 2px 12px rgba(0,0,0,0.45);
+      --bg-meta: #1f2a35;
+      --border-meta: #3a4f62;
+      --bg-chip-date: #253545;
+      --border-chip-date: #4a6680;
+      --bg-chip-time: #23352f;
+      --border-chip-time: #4c7464;
+      --bg-reminder: #2b261c;
+      --border-reminder: #5f5032;
+      --text-reminder-icon: #f0c674;
+      --bg-label: #24303c;
+      --border-label: #41586d;
+      --bg-btn: #222d38;
+      --bg-btn-hover: #2b3947;
+      --border-btn: #435364;
+      --text-btn: #e6edf3;
+      --bg-primary: #3b82c4;
+      --bg-primary-hover: #2c6ea8;
+      --text-primary: #ffffff;
+      --bg-input: #111923;
+      --border-input: #3a4858;
+      --theme-light: #a2c5ff;
+      --theme-forest: #6db192;
+      --theme-dark: #b9c4d0;
+    }
+    body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; margin: 0; background: var(--bg-page); color: var(--text-main); }
+    .container { max-width: 880px; margin: 20px auto; background: var(--bg-surface); padding: 24px; border-radius: 12px; box-shadow: var(--shadow-soft); }
     h1 { margin-top: 0; margin-bottom: 0; }
     .topbar {
       display: flex;
@@ -18,32 +108,57 @@
     }
     .title-block { flex: 1 1 auto; min-width: 0; }
     .title-block h1 { line-height: 1.35; word-break: break-word; }
-    .lang-switch { display: inline-flex; gap: 6px; flex-shrink: 0; }
+    .control-panel { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+    .lang-switch { display: inline-flex; gap: 6px; }
     .lang-btn {
       text-decoration: none;
-      color: #1f2328;
-      border: 1px solid #d0d7de;
+      color: var(--text-btn);
+      border: 1px solid var(--border-btn);
       border-radius: 6px;
       padding: 5px 10px;
       font-size: 13px;
-      background: #fff;
+      background: var(--bg-surface);
     }
     .lang-btn.active {
-      background: #e7f1ff;
-      border-color: #96c2ff;
+      background: var(--bg-label);
+      border-color: var(--border-label);
       font-weight: 600;
     }
+    .theme-switch { display: inline-flex; gap: 6px; }
+    .theme-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid var(--border-btn);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .theme-btn:hover { background: var(--bg-btn-hover); }
+    .theme-btn.active {
+      box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--border-btn);
+    }
+    .theme-btn[data-theme-option="light"] { color: var(--theme-light); }
+    .theme-btn[data-theme-option="forest"] { color: var(--theme-forest); }
+    .theme-btn[data-theme-option="dark"] { color: var(--theme-dark); }
     .metric-chip {
       display: inline-flex;
       align-items: center;
-      border: 1px solid #cfe2ff;
-      background: #f4f9ff;
+      border: 1px solid var(--border-chip-date);
+      background: var(--bg-chip-date);
       border-radius: 999px;
       padding: 6px 12px;
       font-weight: 600;
     }
-    .metric-date { background: #f4f9ff; border-color: #cfe2ff; }
-    .metric-time { background: #eefaf1; border-color: #bde5c8; }
+    .metric-date { background: var(--bg-chip-date); border-color: var(--border-chip-date); }
+    .metric-time { background: var(--bg-chip-time); border-color: var(--border-chip-time); }
     .metric-window {
       margin-top: 6px;
       display: flex;
@@ -51,12 +166,12 @@
       align-items: center;
       gap: 6px;
     }
-    .window-separator { color: #57606a; font-weight: 600; padding: 0 2px; }
+    .window-separator { color: var(--text-subtle); font-weight: 600; padding: 0 2px; }
     .page-stack { display: grid; gap: var(--block-gap); }
     .reminder-item {
       margin-top: 0;
-      border: 1px solid #ffe2b7;
-      background: #fff9f0;
+      border: 1px solid var(--border-reminder);
+      background: var(--bg-reminder);
       border-radius: 10px;
       padding: 10px 12px;
       font-size: 14px;
@@ -65,10 +180,10 @@
     .reminder-item::before {
       content: "💡 ";
       font-weight: 700;
-      color: #9a6700;
+      color: var(--text-reminder-icon);
     }
-    .meta { background: #eef6ff; border: 1px solid #cce1ff; padding: 12px; border-radius: 8px; margin-bottom: 0; }
-    .section { border: 1px solid #d8dee4; border-radius: 10px; padding: 16px; margin-bottom: 0; }
+    .meta { background: var(--bg-meta); border: 1px solid var(--border-meta); padding: 12px; border-radius: 8px; margin-bottom: 0; }
+    .section { border: 1px solid var(--border-soft); border-radius: 10px; padding: 16px; margin-bottom: 0; }
     .section h2 { margin: 0; font-size: 20px; }
     .collapse-header {
       display: flex;
@@ -79,9 +194,9 @@
     }
     .collapse-header.compact { margin-bottom: 8px; }
     .collapse-toggle {
-      background: #f6f8fa;
-      color: #1f2328;
-      border: 1px solid #d0d7de;
+      background: var(--bg-btn);
+      color: var(--text-btn);
+      border: 1px solid var(--border-btn);
       border-radius: 6px;
       width: 32px;
       height: 30px;
@@ -93,29 +208,37 @@
       align-items: center;
       justify-content: center;
     }
-    .collapse-toggle:hover { background: #eef2f6; }
+    .collapse-toggle:hover { background: var(--bg-btn-hover); }
     .collapse-content[hidden] { display: none; }
     .field { margin-bottom: 18px; }
     .field:last-child { margin-bottom: 0; }
     .label { font-weight: 600; margin-bottom: 8px; display: block; }
-    input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #d0d7de; border-radius: 8px; box-sizing: border-box; }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-input);
+      border-radius: 8px;
+      box-sizing: border-box;
+      background: var(--bg-input);
+      color: var(--text-main);
+    }
     textarea { min-height: 100px; }
     .options { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .pair label { font-size: 14px; color: #57606a; margin-bottom: 6px; display: block; }
+    .pair label { font-size: 14px; color: var(--text-subtle); margin-bottom: 6px; display: block; }
     .questionnaire-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-    .questionnaire-item { border: 1px solid #d8dee4; border-radius: 8px; padding: 12px; }
+    .questionnaire-item { border: 1px solid var(--border-soft); border-radius: 8px; padding: 12px; }
     .questionnaire-item .label {
-      background: #f2f8ff;
-      border: 1px solid #d6e9ff;
+      background: var(--bg-label);
+      border: 1px solid var(--border-label);
       border-radius: 6px;
       padding: 8px 10px;
       margin-bottom: 10px;
     }
     .questionnaire-item-title {
       margin: 0;
-      background: #f2f8ff;
-      border: 1px solid #d6e9ff;
+      background: var(--bg-label);
+      border: 1px solid var(--border-label);
       border-radius: 6px;
       padding: 8px 10px;
       font-size: 15px;
@@ -124,8 +247,8 @@
     }
     .questionnaire-item.empty { border: 0; padding: 0; }
     .other { margin-top: 8px; }
-    .submit-button { background: #0969da; color: white; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-size: 15px; }
-    .submit-button:hover { background: #0550ae; }
+    .submit-button { background: var(--bg-primary); color: var(--text-primary); border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-size: 15px; }
+    .submit-button:hover { background: var(--bg-primary-hover); }
     form { margin: 0; display: grid; gap: var(--block-gap); }
     @media (max-width: 860px) {
       .questionnaire-row { grid-template-columns: 1fr; margin-bottom: 10px; }
@@ -184,9 +307,16 @@
       <div class="title-block">
         <h1>{{ survey_title }}</h1>
       </div>
-      <div class="lang-switch">
-        <a class="lang-btn {% if current_lang == 'zh-TW' %}active{% endif %}" href="{{ lang_urls['zh-TW'] }}">{{ ui.lang_zh }}</a>
-        <a class="lang-btn {% if current_lang == 'en' %}active{% endif %}" href="{{ lang_urls['en'] }}">{{ ui.lang_en }}</a>
+      <div class="control-panel">
+        <div class="lang-switch">
+          <a class="lang-btn {% if current_lang == 'zh-TW' %}active{% endif %}" href="{{ lang_urls['zh-TW'] }}">{{ ui.lang_zh }}</a>
+          <a class="lang-btn {% if current_lang == 'en' %}active{% endif %}" href="{{ lang_urls['en'] }}">{{ ui.lang_en }}</a>
+        </div>
+        <div class="theme-switch" aria-label="theme switcher">
+          <button class="theme-btn" type="button" data-theme-option="light" aria-label="light theme">O</button>
+          <button class="theme-btn" type="button" data-theme-option="forest" aria-label="forest theme">O</button>
+          <button class="theme-btn" type="button" data-theme-option="dark" aria-label="dark theme">O</button>
+        </div>
       </div>
     </div>
     <div class="page-stack">
@@ -273,6 +403,24 @@
         icon.textContent = nextExpanded ? '▾' : '▸';
       }
     }
+
+    function applyTheme(themeName) {
+      const validThemes = ['light', 'forest', 'dark'];
+      const resolvedTheme = validThemes.includes(themeName) ? themeName : 'light';
+      document.documentElement.setAttribute('data-theme', resolvedTheme);
+      localStorage.setItem('survey-theme', resolvedTheme);
+
+      document.querySelectorAll('[data-theme-option]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.themeOption === resolvedTheme);
+      });
+    }
+
+    const savedTheme = localStorage.getItem('survey-theme') || 'light';
+    applyTheme(savedTheme);
+
+    document.querySelectorAll('[data-theme-option]').forEach((button) => {
+      button.addEventListener('click', () => applyTheme(button.dataset.themeOption));
+    });
 
     document.querySelectorAll('[data-collapse-toggle]').forEach((button) => {
       button.addEventListener('click', () => toggleCard(button));
