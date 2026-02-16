@@ -10,7 +10,32 @@
     h1 { margin-top: 0; }
     .meta { background: #eef6ff; border: 1px solid #cce1ff; padding: 12px; border-radius: 8px; margin-bottom: 18px; }
     .section { border: 1px solid #d8dee4; border-radius: 10px; padding: 16px; margin-bottom: 18px; }
-    .section h2 { margin: 0 0 14px; font-size: 20px; }
+    .section h2 { margin: 0; font-size: 20px; }
+    .collapse-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .collapse-header.compact { margin-bottom: 8px; }
+    .collapse-toggle {
+      background: #f6f8fa;
+      color: #1f2328;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      width: 32px;
+      height: 30px;
+      padding: 0;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .collapse-toggle:hover { background: #eef2f6; }
+    .collapse-content[hidden] { display: none; }
     .field { margin-bottom: 18px; }
     .field:last-child { margin-bottom: 0; }
     .label { font-weight: 600; margin-bottom: 8px; display: block; }
@@ -28,10 +53,20 @@
       padding: 8px 10px;
       margin-bottom: 10px;
     }
+    .questionnaire-item-title {
+      margin: 0;
+      background: #f2f8ff;
+      border: 1px solid #d6e9ff;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
     .questionnaire-item.empty { border: 0; padding: 0; }
     .other { margin-top: 8px; }
-    button { background: #0969da; color: white; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-size: 15px; }
-    button:hover { background: #0550ae; }
+    .submit-button { background: #0969da; color: white; border: 0; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-size: 15px; }
+    .submit-button:hover { background: #0550ae; }
     @media (max-width: 860px) {
       .questionnaire-row { grid-template-columns: 1fr; margin-bottom: 10px; }
       .questionnaire-item.empty { display: none; }
@@ -40,9 +75,11 @@
   </style>
 </head>
 <body>
-  {% macro render_field(field, existing) -%}
+  {% macro render_field(field, existing, show_label=True) -%}
     <div class="field">
+      {% if show_label %}
       <label class="label" for="{{ field.name }}">{{ field.label }}</label>
+      {% endif %}
 
       {% if field.type == 'text' %}
         <input id="{{ field.name }}" name="{{ field.name }}" type="text" placeholder="{{ field.placeholder }}" value="{{ existing.get(field.name, '') }}">
@@ -87,31 +124,79 @@
     </div>
 
     <form method="post">
-      <div class="section">
-        <h2>基本資料</h2>
-        {% for field in basic_fields %}
-        {{ render_field(field, existing) }}
-        {% endfor %}
+      <div class="section" data-collapsible-card>
+        <div class="collapse-header">
+          <h2>基本資料</h2>
+          <button class="collapse-toggle" type="button" data-collapse-toggle aria-expanded="true" aria-controls="section-basic-content">
+            <span data-toggle-icon>▾</span>
+          </button>
+        </div>
+        <div id="section-basic-content" class="collapse-content" data-collapse-content>
+          {% for field in basic_fields %}
+          {{ render_field(field, existing) }}
+          {% endfor %}
+        </div>
       </div>
 
-      <div class="section">
-        <h2>問卷欄位</h2>
-        {% for row in questionnaire_rows %}
-        <div class="questionnaire-row">
-          {% for field in row %}
-          <div class="questionnaire-item">
-            {{ render_field(field, existing) }}
+      <div class="section" data-collapsible-card>
+        <div class="collapse-header">
+          <h2>問卷欄位</h2>
+          <button class="collapse-toggle" type="button" data-collapse-toggle aria-expanded="true" aria-controls="section-questionnaire-content">
+            <span data-toggle-icon>▾</span>
+          </button>
+        </div>
+        <div id="section-questionnaire-content" class="collapse-content" data-collapse-content>
+          {% for row in questionnaire_rows %}
+          {% set row_index = loop.index %}
+          <div class="questionnaire-row">
+            {% for field in row %}
+            {% set card_content_id = 'questionnaire-card-content-' ~ row_index ~ '-' ~ loop.index %}
+            <div class="questionnaire-item" data-collapsible-card>
+              <div class="collapse-header compact">
+                <h3 class="questionnaire-item-title">{{ field.label }}</h3>
+                <button class="collapse-toggle" type="button" data-collapse-toggle aria-expanded="true" aria-controls="{{ card_content_id }}">
+                  <span data-toggle-icon>▾</span>
+                </button>
+              </div>
+              <div id="{{ card_content_id }}" class="collapse-content" data-collapse-content>
+                {{ render_field(field, existing, False) }}
+              </div>
+            </div>
+            {% endfor %}
+            {% if row|length == 1 %}
+            <div class="questionnaire-item empty"></div>
+            {% endif %}
           </div>
           {% endfor %}
-          {% if row|length == 1 %}
-          <div class="questionnaire-item empty"></div>
-          {% endif %}
         </div>
-        {% endfor %}
       </div>
 
-      <button type="submit">送出/更新</button>
+      <button class="submit-button" type="submit">送出/更新</button>
     </form>
   </div>
+
+  <script>
+    function toggleCard(button) {
+      const contentId = button.getAttribute('aria-controls');
+      const content = document.getElementById(contentId);
+      if (!content) {
+        return;
+      }
+
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+      const nextExpanded = !isExpanded;
+      button.setAttribute('aria-expanded', String(nextExpanded));
+      content.hidden = !nextExpanded;
+
+      const icon = button.querySelector('[data-toggle-icon]');
+      if (icon) {
+        icon.textContent = nextExpanded ? '▾' : '▸';
+      }
+    }
+
+    document.querySelectorAll('[data-collapse-toggle]').forEach((button) => {
+      button.addEventListener('click', () => toggleCard(button));
+    });
+  </script>
 </body>
 </html>
