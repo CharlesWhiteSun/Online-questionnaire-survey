@@ -28,12 +28,19 @@ python app.py
 建議短網址（內網）：
 - `http://<你的內網IP>:5000/q/at`
 
-## 3) 問卷開放時間調整
+## 3) 問卷開放時間調整（參數檔）
 
-目前在 `survey_config.py` 由 `default_window()` 自動計算 5 個工作天。
-若要固定日期，可直接修改：
-- `OPEN_START_AT`
-- `OPEN_END_AT`
+請編輯 `survey_window.json`：
+
+```json
+{
+	"open_start_at": "2026-02-16 09:00",
+	"open_end_at": "2026-02-20 18:00"
+}
+```
+
+- 時間格式固定為 `YYYY-MM-DD HH:MM`
+- 若格式錯誤或結束早於開始，系統會自動回退為「啟動當天起算 5 個工作天」
 
 ## 4) 資料儲存
 
@@ -41,6 +48,12 @@ python app.py
 - 表格：`responses`
 - 以 `(survey_slug, client_token)` 唯一鍵覆寫更新
 
-## 5) 依 PDF 轉入的問卷內容
+## 5) 欄位拆分
+
+已調整為左右雙欄輸入：
+- 訪談部門/人員 → `訪談部門` + `訪談人員`
+- 主測系統/角色 → `主測系統` + `主測角色`
+
+## 6) 依 PDF 轉入的問卷內容
 
 題目已根據 `file/自動化測試導入 需求訪談表.pdf` 建立於 `survey_config.py` 的 `FORM_DEFINITION`。

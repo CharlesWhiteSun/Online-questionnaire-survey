@@ -1,4 +1,6 @@
+import json
 from datetime import date, datetime, time, timedelta
+from pathlib import Path
 
 
 def add_workdays_including_start(start_date: date, workdays: int) -> date:
@@ -21,10 +23,27 @@ def default_window() -> tuple[datetime, datetime]:
     return start, end
 
 
+def load_window_from_param_file() -> tuple[datetime, datetime]:
+    config_path = Path(__file__).parent / "survey_window.json"
+    if not config_path.exists():
+        return default_window()
+
+    try:
+        with config_path.open("r", encoding="utf-8") as file:
+            payload = json.load(file)
+        start = datetime.strptime(payload["open_start_at"], "%Y-%m-%d %H:%M")
+        end = datetime.strptime(payload["open_end_at"], "%Y-%m-%d %H:%M")
+        if end < start:
+            return default_window()
+        return start, end
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return default_window()
+
+
 SURVEY_SLUG = "at"
 SURVEY_TITLE = "自動化測試導入需求訪談表"
 
-OPEN_START_AT, OPEN_END_AT = default_window()
+OPEN_START_AT, OPEN_END_AT = load_window_from_param_file()
 
 CLOSED_MESSAGE_TITLE = "問卷填寫時間已結束"
 CLOSED_MESSAGE_BODY = (
@@ -36,16 +55,34 @@ SUCCESS_MESSAGE = "已成功儲存。若您再次開啟同一連結並提交，�
 
 FORM_DEFINITION = [
     {
-        "type": "text",
-        "name": "department_person",
+        "type": "text_pair",
+        "name": "department_person_pair",
         "label": "訪談部門/人員",
-        "placeholder": "例如：研發部 王小明",
+        "left": {
+            "name": "department_name",
+            "label": "訪談部門",
+            "placeholder": "例如：研發部",
+        },
+        "right": {
+            "name": "person_name",
+            "label": "訪談人員",
+            "placeholder": "例如：王小明",
+        },
     },
     {
-        "type": "text",
-        "name": "main_system_role",
+        "type": "text_pair",
+        "name": "main_system_role_pair",
         "label": "主測系統/角色",
-        "placeholder": "例如：ERP / 審核者",
+        "left": {
+            "name": "main_system",
+            "label": "主測系統",
+            "placeholder": "例如：ERP",
+        },
+        "right": {
+            "name": "main_role",
+            "label": "主測角色",
+            "placeholder": "例如：審核者",
+        },
     },
     {
         "type": "multiselect",

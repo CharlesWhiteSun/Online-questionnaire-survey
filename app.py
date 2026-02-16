@@ -24,6 +24,14 @@ COOKIE_NAME = "survey_client_id"
 app = Flask(__name__)
 
 
+def print_startup_info() -> None:
+    print("=" * 60)
+    print(f"問卷：{SURVEY_TITLE}")
+    print(f"開放時間：{OPEN_START_AT:%Y-%m-%d %H:%M} ~ {OPEN_END_AT:%Y-%m-%d %H:%M}")
+    print(f"短網址路徑：http://<你的內網IP>:5000/q/{SURVEY_SLUG}")
+    print("=" * 60)
+
+
 def init_db() -> None:
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
@@ -74,11 +82,17 @@ def get_existing_answers(client_token: str) -> dict:
 def collect_answers() -> dict:
     payload = {}
     for field in FORM_DEFINITION:
+        field_type = field["type"]
         name = field["name"]
-        if field["type"] == "multiselect":
+        if field_type == "multiselect":
             payload[name] = request.form.getlist(name)
             if field.get("allow_other"):
                 payload[f"{name}_other"] = request.form.get(f"{name}_other", "").strip()
+        elif field_type == "text_pair":
+            left_name = field["left"]["name"]
+            right_name = field["right"]["name"]
+            payload[left_name] = request.form.get(left_name, "").strip()
+            payload[right_name] = request.form.get(right_name, "").strip()
         else:
             payload[name] = request.form.get(name, "").strip()
     return payload
@@ -158,4 +172,5 @@ def survey(slug: str):
 
 if __name__ == "__main__":
     init_db()
+    print_startup_info()
     app.run(host="0.0.0.0", port=5000, debug=False)
