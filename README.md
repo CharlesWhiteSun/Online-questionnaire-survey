@@ -1,45 +1,71 @@
-# 內部問卷調查系統（本機版）
+# 內部問卷調查系統（Flask + SQLite）
 
-此專案已依照需求建立：
-- 匿名填答、無需登入
-- 以短網址路徑開啟問卷
-- 開放期限預設為「啟動當天起算 5 個工作天」
-- 同一裝置重複送出時，採覆寫更新，不會新增多筆
-- 期限過後顯示友善提示頁
+本系統提供公司內網使用的匿名問卷與管理報表，支援中英雙語、角色登入、匯出/匯入與自動測試。
 
-## 1) 安裝
+## 1) 目前功能總覽
+
+### 問卷端
+- 匿名填答、免登入。
+- 入口短網址：`/q/at`。
+- 開放時間可設定，超過期限顯示截止頁。
+- 提交採唯一鍵更新：`(survey_slug, department_name, person_name)`，同部門+人員會覆寫舊資料。
+- 問卷與成功/截止頁皆支援 `zh-TW` / `en`。
+
+### 報表端
+- 路徑：`/admin/report`（需先登入）。
+- 提供日期篩選、摘要卡（總筆數/部門數/最新時間）、卡片式列表與詳情區塊。
+- 支援分頁與每頁筆數（10/20/50）。
+- 管理者可刪除單筆資料。
+
+### 登入與權限
+- 登入頁：`/admin/login`。
+- 角色分為 `guest`（一般使用者）與 `admin`（管理者）。
+- `guest`：可查看報表、可使用 CSV/PDF 匯出。
+- `admin`：擁有 `guest` 全部權限，另可使用「匯出/匯入」管理按鈕（匯入 CSV）。
+- 登入後有 10 分鐘自動登出倒數。
+	- 倒數由後端 session 剩餘秒數驅動，重新整理頁面不會重置。
+	- 可按「重製計時」重設回 10 分鐘。
+
+## 2) 安裝與啟動
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
-
-## 2) 啟動
-
-```powershell
 python app.py
 ```
 
-預設已啟用開發自動重啟（修改 Python/模板後會自動套用）：
-- 啟用（預設）：`SURVEY_AUTO_RELOAD=1`
+預設監聽：
+- `http://127.0.0.1:5000`
+- 內網：`http://<你的內網IP>:5000`
+
+開發自動重載：
+- 開啟（預設）：`SURVEY_AUTO_RELOAD=1`
 - 關閉：`SURVEY_AUTO_RELOAD=0`
 
-PowerShell 臨時關閉範例：
+PowerShell 範例：
 
 ```powershell
 $env:SURVEY_AUTO_RELOAD="0"
 python app.py
 ```
 
-預設會監聽：
-- `http://127.0.0.1:5000`
-- 區網可用：`http://<你的內網IP>:5000`
+## 3) .env 設定（登入帳號密碼）
 
-建議短網址（內網）：
-- `http://<你的內網IP>:5000/q/at`
+啟動時若根目錄沒有 `.env`，系統會自動由 `.env.example` 建立。
 
-## 3) 問卷開放時間調整（參數檔）
+`.env` 範例：
+
+```env
+SURVEY_GUEST_USERNAME=guest
+SURVEY_GUEST_PASSWORD=guest
+SURVEY_ADMIN_USERNAME=manager
+SURVEY_ADMIN_PASSWORD=請改成你的管理者密碼
+```
+
+> 建議首次啟動後立即修改 `SURVEY_ADMIN_PASSWORD`。
+
+## 4) 問卷開放時間設定
 
 請編輯 `survey_window.json`：
 
@@ -50,71 +76,33 @@ python app.py
 }
 ```
 
-- 時間格式固定為 `YYYY-MM-DD HH:MM`
-- 若格式錯誤或結束早於開始，系統會自動回退為「啟動當天起算 5 個工作天」
+- 時間格式：`YYYY-MM-DD HH:MM`
+- 若格式錯誤或結束早於開始，系統會回退到預設開放窗。
 
-## 4) 資料儲存
+## 5) 報表操作說明
 
-- SQLite 資料庫檔：`survey.db`
+- 一般匯出按鈕（CSV/PDF）：在日期篩選列右側。
+- 管理者匯出/匯入按鈕：在「已選日期」列右側。
+- 匯入流程：按「匯入」→ 選擇 `.csv` 檔案 → 自動送出。
+- 匯出路由：
+	- CSV：`/admin/report/export.csv`
+	- PDF：`/admin/report/export.pdf`
+
+## 6) 資料儲存
+
+- 資料庫：`survey.db`（SQLite）
 - 表格：`responses`
-- 以 `(survey_slug, department_name, person_name)` 唯一鍵覆寫更新
+- 主鍵策略：以 `(survey_slug, department_name, person_name)` 做 upsert。
 
-## 5) 欄位拆分
-
-已調整為左右雙欄輸入：
-- 訪談部門/人員 → `訪談部門` + `訪談人員`
-- 主測系統/角色 → `主測系統` + `主測角色`
-
-## 6) 依 PDF 轉入的問卷內容
-
-題目已根據 `file/自動化測試導入 需求訪談表.pdf` 建立於 `survey_config.py` 的 `FORM_DEFINITION`。
-
-## 7) 語系切換（i18n）
-
-- 支援語系：`zh-TW`、`en`
-- 頁首右上有語系切換按鈕（中文 / EN）
-- 也可透過網址參數切換：
-	- `http://<你的內網IP>:5000/q/at?lang=zh-TW`
-	- `http://<你的內網IP>:5000/q/at?lang=en`
-
-## 8) 報表登入、角色與匯出
-
-- 報表頁：`http://<你的內網IP>:5000/admin/report`
-- 登入頁：`http://<你的內網IP>:5000/admin/login`
-- 報表頁現在需先登入（一般使用者與管理者都可登入查看）
-- 一般使用者預設帳密：`guest / guest`
-- 管理者帳密可透過根目錄 `.env` 設定
-
-根目錄 `.env` 範例：
-
-```env
-SURVEY_GUEST_USERNAME=guest
-SURVEY_GUEST_PASSWORD=guest
-SURVEY_ADMIN_USERNAME=manager
-SURVEY_ADMIN_PASSWORD=請改成你的管理者密碼
-```
-
-- 若啟動時找不到 `.env`，系統會自動用 `.env.example` 建立一份 `.env`
-- 建立後請務必修改管理者密碼
-
-- 一般使用者（guest）可查看報表
-- 管理者（admin）可查看報表 + 匯出/匯入
-- 匯出 CSV（管理者）：`http://<你的內網IP>:5000/admin/report/export.csv`
-- 報表頁會顯示：提交總筆數、部門數、最新提交時間
-- 每筆問卷以簡易卡片並排顯示（時間 / 部門 / 人員）
-- 可用日期篩選（Date）快速查看指定日期的提交資料
-
-## 9) 自動化測試（必跑）
-
-每次修改程式碼（包含模板、共用函式、路由）前後，都應新增或更新對應測試，並執行完整測試避免破壞既有功能。
-
-執行測試：
+## 7) 自動化測試
 
 ```powershell
 python -m pytest -q
 ```
 
-目前測試重點包含：
-- 舊資料選項值正規化（例如：`登入主功能操作送出`）
-- 英文管理頁標題與選項翻譯
-- CSV 匯出路徑與內容正規化
+目前測試包含：
+- 權限控管（guest/admin/未登入）
+- 報表按鈕顯示規則與版面回歸
+- 倒數登出與重製計時
+- 匯出/匯入路由與內容
+- i18n 顯示與日期格式
