@@ -216,6 +216,16 @@ def build_admin_ui_texts(lang: str) -> dict:
             "tag_person": "Interviewee",
             "tag_system": "Primary System",
             "tag_role": "Primary Role",
+            "filter_date_label": "Filter by Date",
+            "filter_apply": "Apply",
+            "filter_reset": "Reset",
+            "filter_selected_date": "Selected Date",
+            "filter_no_match": "No records for the selected date.",
+            "detail_panel_title": "Detailed Questionnaire",
+            "detail_panel_hint": "Click a compact card above to view details here.",
+            "compact_panel_title": "Compact Questionnaire List",
+            "compact_panel_toggle": "Collapse list",
+            "detail_panel_toggle": "Collapse details",
             "delete_aria": "Delete this record",
             "delete_confirm_template": "Are you sure you want to delete the data for Department {department}, Interviewee {person}?",
             "unknown_text": "Unknown",
@@ -238,6 +248,16 @@ def build_admin_ui_texts(lang: str) -> dict:
         "tag_person": "訪談人員",
         "tag_system": "主測系統",
         "tag_role": "主測角色",
+        "filter_date_label": "依日期篩選",
+        "filter_apply": "套用",
+        "filter_reset": "清除",
+        "filter_selected_date": "已選日期",
+        "filter_no_match": "所選日期目前沒有資料。",
+        "detail_panel_title": "詳細問卷內容",
+        "detail_panel_hint": "請點選上方簡要卡片以查看詳細資料。",
+        "compact_panel_title": "簡要問卷列表",
+        "compact_panel_toggle": "收合列表",
+        "detail_panel_toggle": "收合內容",
         "delete_aria": "刪除此筆資料",
         "delete_confirm_template": "確認要刪除此 {department} 部門 {person} 人員的資料嗎?",
         "unknown_text": "未知",
@@ -269,7 +289,9 @@ def localize_form_definition(lang: str) -> list[dict]:
 
 
 def format_date_by_lang(value: datetime, lang: str) -> str:
-    return value.strftime("%b %d, %Y")
+    if lang == "en":
+        return value.strftime("%b %d, %Y")
+    return value.strftime("%Y/%m/%d")
 
 
 def format_time(value: datetime) -> str:
@@ -327,9 +349,10 @@ def build_report_definition() -> list[dict]:
 REPORT_DEFINITION = build_report_definition()
 
 
-def format_report_datetime(value: str) -> str:
+def format_report_datetime(value: str, lang: str = "zh-TW") -> str:
     try:
-        return datetime.fromisoformat(value).strftime("%Y-%m-%d %H:%M:%S")
+        parsed = datetime.fromisoformat(value)
+        return f"{format_date_by_lang(parsed, lang)} {parsed.strftime('%H:%M:%S')}"
     except ValueError:
         return value
 
@@ -404,6 +427,22 @@ def get_report_records(lang: str = "zh-TW") -> list[dict]:
 
     records = []
     for row in rows:
+        submitted_raw = str(row[2])
+        submitted_date = "—"
+        submitted_time = "—"
+        submitted_display = format_report_datetime(submitted_raw, lang)
+        try:
+            submitted_dt = datetime.fromisoformat(submitted_raw)
+            submitted_date = submitted_dt.strftime("%Y-%m-%d")
+            submitted_time = submitted_dt.strftime("%H:%M:%S")
+        except ValueError:
+            if " " in submitted_display:
+                date_part, time_part = submitted_display.split(" ", 1)
+                if len(date_part) == 10 and "-" in date_part:
+                    submitted_date = date_part
+                if len(time_part) >= 8:
+                    submitted_time = time_part[:8]
+
         try:
             answers = json.loads(row[1])
         except json.JSONDecodeError:
@@ -426,7 +465,9 @@ def get_report_records(lang: str = "zh-TW") -> list[dict]:
         records.append(
             {
                 "id": row[0],
-                "submitted_at": format_report_datetime(row[2]),
+                "submitted_at": submitted_display,
+                "submitted_date": submitted_date,
+                "submitted_time": submitted_time,
                 "department_name": str(answers.get("department_name", "")).strip() or "—",
                 "person_name": str(answers.get("person_name", "")).strip() or "—",
                 "main_system": str(answers.get("main_system", "")).strip() or "—",
@@ -452,6 +493,29 @@ def build_report_summary(records: list[dict]) -> dict:
         "department_count": len(departments),
         "latest_submitted_at": records[0]["submitted_at"] if records else "—",
     }
+
+
+def filter_records_by_date(records: list[dict], selected_date: str) -> list[dict]:
+    if not selected_date:
+        return records
+    return [record for record in records if record.get("submitted_date") == selected_date]
+
+
+def build_available_dates(records: list[dict]) -> list[str]:
+    return sorted(
+        {record.get("submitted_date", "") for record in records if record.get("submitted_date") and record.get("submitted_date") != "—"},
+        reverse=True,
+    )
+
+
+def format_filter_date_value(selected_date: str, lang: str) -> str:
+    if not selected_date:
+        return ""
+    try:
+        parsed = datetime.strptime(selected_date, "%Y-%m-%d")
+        return format_date_by_lang(parsed, lang)
+    except ValueError:
+        return selected_date
 
 
 def build_report_csv(records: list[dict]) -> str:
@@ -771,8 +835,16 @@ def survey(slug: str):
 def admin_report():
     lang = get_lang()
     admin_ui = build_admin_ui_texts(lang)
-    records = get_report_records(lang)
+    selected_date = request.args.get("date", "").strip()
+    if not selected_date:
+        selected_date = now().strftime("%Y-%m-%d")
+
+    all_records = get_report_records(lang)
+    available_dates = build_available_dates(all_records)
+
+    records = filter_records_by_date(all_records, selected_date)
     summary = build_report_summary(records)
+    selected_date_display = format_filter_date_value(selected_date, lang)
 
     response = make_response(
         render_template(
@@ -783,11 +855,14 @@ def admin_report():
             survey_title=tr(SURVEY_TITLE, lang),
             summary=summary,
             records=records,
+            selected_date=selected_date,
+            selected_date_display=selected_date_display,
+            available_dates=available_dates,
             export_url=url_for("admin_report_export_csv", lang=lang),
             export_pdf_url=url_for("admin_report_export_pdf", lang=lang),
             lang_urls={
-                "zh-TW": url_for("admin_report", lang="zh-TW"),
-                "en": url_for("admin_report", lang="en"),
+                "zh-TW": url_for("admin_report", lang="zh-TW", date=selected_date),
+                "en": url_for("admin_report", lang="en", date=selected_date),
             },
         )
     )
