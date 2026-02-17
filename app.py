@@ -267,6 +267,8 @@ def build_admin_ui_texts(lang: str) -> dict:
             "next_page": "Next",
             "data_export_csv": "CSV",
             "data_export_pdf": "PDF",
+            "data_export": "Export",
+            "data_import": "Import",
             "admin_login": "Login",
             "admin_logout": "Logout",
             "reset_timer": "Reset Timer",
@@ -312,6 +314,8 @@ def build_admin_ui_texts(lang: str) -> dict:
         "next_page": "下一頁",
         "data_export_csv": "CSV",
         "data_export_pdf": "PDF",
+        "data_export": "匯出",
+        "data_import": "匯入",
         "admin_login": "登入",
         "admin_logout": "登出",
         "reset_timer": "重製計時",
@@ -1160,6 +1164,7 @@ def admin_report():
 
     admin_ui = build_admin_ui_texts(lang)
     can_manage_exports = bool(current_role)
+    can_manage_import_tools = current_role == "admin"
     selected_date = request.args.get("date", "").strip()
     page = normalize_positive_int(request.args.get("page"), 1)
     per_page = normalize_positive_int(request.args.get("per_page"), 10)
@@ -1194,6 +1199,7 @@ def admin_report():
             per_page=per_page,
             allowed_per_page=allowed_per_page,
             can_manage_exports=can_manage_exports,
+            can_manage_import_tools=can_manage_import_tools,
             is_authenticated=bool(current_role),
             session_timeout_seconds=session_remaining_seconds,
             session_reset_url=url_for("admin_session_reset"),

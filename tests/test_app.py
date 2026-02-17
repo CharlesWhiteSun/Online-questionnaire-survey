@@ -87,8 +87,12 @@ def test_admin_report_renders_compact_parallel_cards(tmp_path, monkeypatch):
     assert '>CSV<' in html
     assert '>PDF<' in html
     assert 'class="selected-date-actions"' not in html
+    assert '>Export<' not in html
+    assert '>Import<' not in html
     assert 'id="inline-import-file-input"' not in html
     assert 'id="inline-import-trigger"' not in html
+    assert 'id="selected-import-file-input"' not in html
+    assert 'id="selected-import-trigger"' not in html
     assert 'class="record-grid"' in html
     assert 'class="record-card"' in html
     assert 'id="per-page-select" name="per_page"' in html
@@ -131,9 +135,23 @@ def test_admin_report_shows_csv_pdf_for_special_admin(tmp_path, monkeypatch):
     assert 'class="filter-export-actions"' in html
     assert '>CSV<' in html
     assert '>PDF<' in html
-    assert '>Import<' not in html
+    assert 'class="selected-date-actions"' in html
+    assert '>Export<' in html
+    assert '>Import<' in html
+    assert '.admin-export-btn {' in html
+    assert '.admin-import-btn {' in html
+    assert '.inline-file-input {' in html
+    assert 'display: none;' in html
+    assert 'width: 56px;' in html
+    assert 'height: 40px;' in html
+    assert 'box-sizing: border-box;' in html
+    assert 'class="export-btn admin-export-btn"' in html
+    assert '/admin/report/export.csv' in html
+    assert 'class="export-btn admin-import-btn" id="selected-import-trigger"' in html
     assert 'id="inline-import-file-input"' not in html
     assert 'id="inline-import-trigger"' not in html
+    assert 'id="selected-import-file-input"' in html
+    assert 'id="selected-import-trigger"' in html
 
 
 def test_admin_report_has_logout_countdown_and_reset_for_authenticated_user(tmp_path, monkeypatch):

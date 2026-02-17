@@ -147,17 +147,22 @@
       background: #3f8b56;
       color: #fff;
       border-radius: 8px;
-      padding: 8px 14px;
+      width: 56px;
+      height: 40px;
+      padding: 0;
       font-weight: 700;
       font-size: 14px;
-      line-height: 1.2;
-      min-height: 24px;
+      line-height: 1;
       border: 0;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      font-family: inherit;
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
     }
     .export-btn:hover { background: #327046; }
     .pdf-btn {
@@ -165,6 +170,19 @@
     }
     .pdf-btn:hover {
       background: #b4766d;
+    }
+    .admin-export-btn {
+      background: #6f8fb5;
+    }
+    .admin-export-btn:hover {
+      background: #6181a7;
+    }
+    .admin-import-btn {
+      background: #c6b874;
+      color: #2f2b1a;
+    }
+    .admin-import-btn:hover {
+      background: #b8aa66;
     }
     .report-actions {
       display: flex;
@@ -228,6 +246,14 @@
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .import-inline-form {
+      margin: 0;
+      display: inline-flex;
+    }
+    .inline-file-input {
+      display: none;
     }
     .filter-label {
       color: var(--text-subtle);
@@ -713,6 +739,18 @@
         <span>{{ admin_ui.filter_selected_date }}:</span>
         <span class="selected-date-chip">{{ selected_date_display }}</span>
       </div>
+      {% if can_manage_import_tools %}
+      <div class="selected-date-actions">
+        <a class="export-btn admin-export-btn" href="{{ export_url }}">{{ admin_ui.data_export }}</a>
+        <form class="import-inline-form" method="post" action="{{ url_for('admin_report_import_csv') }}" enctype="multipart/form-data">
+          <input type="hidden" name="date" value="{{ selected_date }}">
+          <input type="hidden" name="page" value="{{ current_page }}">
+          <input type="hidden" name="per_page" value="{{ per_page }}">
+          <input class="inline-file-input" id="selected-import-file-input" type="file" name="import_file" accept=".csv" required>
+          <button type="button" class="export-btn admin-import-btn" id="selected-import-trigger">{{ admin_ui.data_import }}</button>
+        </form>
+      </div>
+      {% endif %}
     </div>
     {% endif %}
 
@@ -904,6 +942,8 @@
   const countdownChip = document.getElementById('logout-countdown');
   const resetTimerButton = document.getElementById('reset-logout-timer');
   const logoutForm = document.getElementById('logout-form');
+  const selectedImportInput = document.getElementById('selected-import-file-input');
+  const selectedImportTrigger = document.getElementById('selected-import-trigger');
 
   function formatCountdown(totalSeconds) {
     const minutes = Math.floor(totalSeconds / 60);
@@ -947,6 +987,15 @@
         });
       }
     }
+  }
+
+  if (selectedImportInput && selectedImportTrigger) {
+    selectedImportTrigger.addEventListener('click', () => selectedImportInput.click());
+    selectedImportInput.addEventListener('change', () => {
+      if (selectedImportInput.files && selectedImportInput.files.length > 0) {
+        selectedImportInput.form.submit();
+      }
+    });
   }
 
   document.querySelectorAll('[data-collapse-target]').forEach((button) => {
