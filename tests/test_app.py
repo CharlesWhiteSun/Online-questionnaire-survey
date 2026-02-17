@@ -55,3 +55,19 @@ def test_export_csv_uses_normalized_value_without_crash(tmp_path, monkeypatch):
     content = response.get_data(as_text=True)
     assert content.startswith("\ufeff")
     assert "登入→主功能操作→送出" in content
+
+
+def test_admin_report_renders_section_cards_and_metric_chips(tmp_path, monkeypatch):
+    client = _build_client_with_temp_db(tmp_path, monkeypatch)
+    answers = _sample_answers("登入主功能操作送出")
+    answers["core_flows"] = ["登入主功能操作送出", "查詢檢視匯出"]
+    survey_app.upsert_response(answers)
+
+    response = client.get("/admin/report?lang=en")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert html.count('class="section-card"') >= 2
+    assert 'class="metric-chip">Login → Main Action → Submit</span>' in html
+    assert 'class="metric-chip">Search → View → Export</span>' in html
+    assert "Login → Main Action → Submit；Search → View → Export" not in html

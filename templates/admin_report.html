@@ -194,6 +194,13 @@
     .section-title {
       margin: 0 0 8px;
       font-size: 16px;
+      font-weight: 700;
+    }
+    .section-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      padding: 12px;
     }
     .kv-grid {
       display: grid;
@@ -203,14 +210,31 @@
     }
     .k {
       color: var(--text-subtle);
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       padding-top: 2px;
+      line-height: 1.45;
     }
     .v {
       white-space: pre-wrap;
       word-break: break-word;
       line-height: 1.45;
+      font-size: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .metric-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--border-tag);
+      background: var(--bg-tag);
+      color: var(--text-main);
+      padding: 4px 10px;
+      font-size: 13px;
+      line-height: 1.35;
     }
     .empty {
       background: var(--bg-surface);
@@ -282,22 +306,30 @@
               <button type="submit" class="delete-one-btn" aria-label="{{ admin_ui.delete_aria }}" title="{{ admin_ui.delete_aria }}">🗑</button>
             </form>
           </div>
-          <div>
+          <div class="section-card">
             <h3 class="section-title">{{ admin_ui.basic_section }}</h3>
             <div class="kv-grid">
               {% for item in record.basic_items %}
               <div class="k">{{ item.label }}</div>
-              <div class="v">{{ item.value }}</div>
+              <div class="v">
+                {% for chip in item.chips %}
+                <span class="metric-chip">{{ chip }}</span>
+                {% endfor %}
+              </div>
               {% endfor %}
             </div>
           </div>
 
-          <div>
+          <div class="section-card">
             <h3 class="section-title">{{ admin_ui.questionnaire_section }}</h3>
             <div class="kv-grid">
               {% for item in record.questionnaire_items %}
               <div class="k">{{ item.label }}</div>
-              <div class="v">{{ item.value }}</div>
+              <div class="v">
+                {% for chip in item.chips %}
+                <span class="metric-chip">{{ chip }}</span>
+                {% endfor %}
+              </div>
               {% endfor %}
             </div>
           </div>

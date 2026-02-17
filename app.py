@@ -352,6 +352,13 @@ def canonicalize_selected_option(entry: dict, raw_value: str) -> str:
 
 
 def format_report_value(entry: dict, answers: dict, lang: str) -> str:
+    value_parts = build_report_value_parts(entry, answers, lang)
+    if entry["type"] == "multiselect":
+        return "；".join(value_parts) if value_parts else "—"
+    return value_parts[0] if value_parts else "—"
+
+
+def build_report_value_parts(entry: dict, answers: dict, lang: str) -> list[str]:
     if entry["type"] == "multiselect":
         selected = answers.get(entry["name"], [])
         if not isinstance(selected, list):
@@ -369,10 +376,10 @@ def format_report_value(entry: dict, answers: dict, lang: str) -> str:
             if other_value:
                 selected_values.append(f"{tr('其他：', lang)} {other_value}")
 
-        return "；".join(selected_values) if selected_values else "—"
+        return selected_values
 
     text_value = str(answers.get(entry["name"], "")).strip()
-    return tr(text_value, lang) if text_value else "—"
+    return [tr(text_value, lang)] if text_value else []
 
 
 def get_report_records(lang: str = "zh-TW") -> list[dict]:
@@ -397,7 +404,12 @@ def get_report_records(lang: str = "zh-TW") -> list[dict]:
         basic_items = []
         questionnaire_items = []
         for entry in REPORT_DEFINITION:
-            item = {"label": tr(entry["label"], lang), "value": format_report_value(entry, answers, lang)}
+            chips = build_report_value_parts(entry, answers, lang)
+            item = {
+                "label": tr(entry["label"], lang),
+                "value": format_report_value(entry, answers, lang),
+                "chips": chips if chips else ["—"],
+            }
             if entry["section"] == "basic":
                 basic_items.append(item)
             else:
