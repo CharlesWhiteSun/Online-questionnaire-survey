@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="{{ html_lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }}</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      background: #f6f8fa;
+      color: #1f2328;
+    }
+    .wrap {
+      max-width: 420px;
+      margin: 60px auto;
+      padding: 0 16px;
+    }
+    .top-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #d8dee4;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: grid;
+      gap: 12px;
+    }
+    .lang-switch {
+      display: inline-flex;
+      gap: 6px;
+    }
+    .lang-btn {
+      text-decoration: none;
+      color: #1f2328;
+      border: 1px solid #d8dee4;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      background: #fff;
+    }
+    .lang-btn.active {
+      font-weight: 700;
+      background: #f6f8fa;
+    }
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+    label {
+      font-size: 14px;
+      color: #57606a;
+      font-weight: 600;
+    }
+    input[type="text"],
+    input[type="password"] {
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: #2f6e54;
+      cursor: pointer;
+    }
+    .error {
+      border: 1px solid #f3b3b3;
+      background: #fff1f1;
+      color: #8f1d1d;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top-row">
+      <div class="lang-switch">
+        <a class="lang-btn {% if current_lang == 'zh-TW' %}active{% endif %}" href="{{ lang_urls['zh-TW'] }}">中文</a>
+        <a class="lang-btn {% if current_lang == 'en' %}active{% endif %}" href="{{ lang_urls['en'] }}">EN</a>
+      </div>
+    </div>
+    <form class="card" method="post">
+      {% if error_message %}
+      <div class="error">{{ error_message }}</div>
+      {% endif %}
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <div class="field">
+        <label for="username">{{ username_label }}</label>
+        <input id="username" name="username" type="text" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">{{ password_label }}</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit">{{ submit_text }}</button>
+    </form>
+  </div>
+</body>
+</html>

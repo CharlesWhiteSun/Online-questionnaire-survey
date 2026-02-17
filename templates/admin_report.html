@@ -91,6 +91,35 @@
     }
     .lang-btn.active { font-weight: 600; background: var(--bg-subtle); }
     .theme-switch { display: inline-flex; gap: 6px; }
+    .auth-actions { display: inline-flex; gap: 6px; }
+    .auth-timer {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-subtle);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .countdown-chip {
+      border: 1px solid var(--border-soft);
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      min-width: 48px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .auth-btn {
+      text-decoration: none;
+      color: var(--text-main);
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 13px;
+      background: var(--bg-surface);
+      cursor: pointer;
+    }
     .theme-btn {
       width: 26px;
       height: 26px;
@@ -199,13 +228,6 @@
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
-    }
-    .import-inline-form {
-      margin: 0;
-      display: inline-flex;
-    }
-    .inline-file-input {
-      display: none;
     }
     .filter-label {
       color: var(--text-subtle);
@@ -630,6 +652,20 @@
         <h1>{{ admin_ui.page_title }}｜{{ survey_title }}</h1>
       </div>
       <div class="control-panel">
+        <div class="auth-actions">
+          {% if is_authenticated %}
+          <div class="auth-timer">
+            <span>{{ admin_ui.countdown_prefix }}</span>
+            <span class="countdown-chip" id="logout-countdown">10:00</span>
+          </div>
+          <button class="auth-btn" type="button" id="reset-logout-timer">{{ admin_ui.reset_timer }}</button>
+          <form method="post" action="{{ admin_logout_url }}" id="logout-form">
+            <button class="auth-btn" type="submit">{{ admin_ui.admin_logout }}</button>
+          </form>
+          {% else %}
+          <a class="auth-btn" href="{{ admin_login_url }}">{{ admin_ui.admin_login }}</a>
+          {% endif %}
+        </div>
         <div class="lang-switch">
           <a class="lang-btn {% if current_lang == 'zh-TW' %}active{% endif %}" href="{{ lang_urls['zh-TW'] }}">{{ admin_ui.lang_zh }}</a>
           <a class="lang-btn {% if current_lang == 'en' %}active{% endif %}" href="{{ lang_urls['en'] }}">{{ admin_ui.lang_en }}</a>
@@ -664,10 +700,12 @@
         <button type="submit" class="filter-btn">{{ admin_ui.filter_apply }}</button>
         <a class="filter-btn" href="{{ url_for('admin_report', lang=current_lang) }}">{{ admin_ui.filter_reset }}</a>
       </form>
+      {% if can_manage_exports %}
       <div class="filter-export-actions">
-        <a class="export-btn" href="{{ export_url }}">CSV</a>
-        <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">PDF</a>
+        <a class="export-btn" href="{{ export_url }}">{{ admin_ui.data_export_csv }}</a>
+        <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">{{ admin_ui.data_export_pdf }}</a>
       </div>
+      {% endif %}
     </div>
     {% if selected_date_display %}
     <div class="filter-selected">
@@ -859,6 +897,40 @@
   document.querySelectorAll('[data-record-select]').forEach((button) => {
     button.addEventListener('click', () => renderRecordDetail(button.dataset.recordSelect));
   });
+
+  const isAuthenticated = {{ is_authenticated | tojson }};
+  const timeoutSeconds = {{ session_timeout_seconds }};
+  const countdownChip = document.getElementById('logout-countdown');
+  const resetTimerButton = document.getElementById('reset-logout-timer');
+  const logoutForm = document.getElementById('logout-form');
+
+  function formatCountdown(totalSeconds) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  if (isAuthenticated && countdownChip && logoutForm) {
+    let remainingSeconds = Number.isFinite(timeoutSeconds) ? timeoutSeconds : 600;
+    countdownChip.textContent = formatCountdown(remainingSeconds);
+
+    const timerId = window.setInterval(() => {
+      remainingSeconds -= 1;
+      if (remainingSeconds <= 0) {
+        window.clearInterval(timerId);
+        logoutForm.submit();
+        return;
+      }
+      countdownChip.textContent = formatCountdown(remainingSeconds);
+    }, 1000);
+
+    if (resetTimerButton) {
+      resetTimerButton.addEventListener('click', () => {
+        remainingSeconds = Number.isFinite(timeoutSeconds) ? timeoutSeconds : 600;
+        countdownChip.textContent = formatCountdown(remainingSeconds);
+      });
+    }
+  }
 
   document.querySelectorAll('[data-collapse-target]').forEach((button) => {
     button.addEventListener('click', () => {

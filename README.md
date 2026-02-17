@@ -77,10 +77,29 @@ python app.py
 	- `http://<你的內網IP>:5000/q/at?lang=zh-TW`
 	- `http://<你的內網IP>:5000/q/at?lang=en`
 
-## 8) 管理者報表與匯出
+## 8) 報表登入、角色與匯出
 
-- 管理者報表頁：`http://<你的內網IP>:5000/admin/report`
-- 匯出 CSV：在報表頁右上點「匯出 CSV」，或直接開 `http://<你的內網IP>:5000/admin/report/export.csv`
+- 報表頁：`http://<你的內網IP>:5000/admin/report`
+- 登入頁：`http://<你的內網IP>:5000/admin/login`
+- 報表頁現在需先登入（一般使用者與管理者都可登入查看）
+- 一般使用者預設帳密：`guest / guest`
+- 管理者帳密可透過根目錄 `.env` 設定
+
+根目錄 `.env` 範例：
+
+```env
+SURVEY_GUEST_USERNAME=guest
+SURVEY_GUEST_PASSWORD=guest
+SURVEY_ADMIN_USERNAME=manager
+SURVEY_ADMIN_PASSWORD=請改成你的管理者密碼
+```
+
+- 若啟動時找不到 `.env`，系統會自動用 `.env.example` 建立一份 `.env`
+- 建立後請務必修改管理者密碼
+
+- 一般使用者（guest）可查看報表
+- 管理者（admin）可查看報表 + 匯出/匯入
+- 匯出 CSV（管理者）：`http://<你的內網IP>:5000/admin/report/export.csv`
 - 報表頁會顯示：提交總筆數、部門數、最新提交時間
 - 每筆問卷以簡易卡片並排顯示（時間 / 部門 / 人員）
 - 可用日期篩選（Date）快速查看指定日期的提交資料
