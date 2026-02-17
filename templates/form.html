@@ -261,10 +261,15 @@
     form { margin: 0; display: grid; gap: var(--block-gap); }
     .page-footer {
       margin-top: 18px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border-soft);
+    }
+    .page-footer-card {
+      background: var(--bg-meta);
+      border: 1px solid var(--border-meta);
+      border-radius: 10px;
+      box-shadow: var(--shadow-soft);
+      padding: 14px 12px 12px;
       text-align: center;
-      color: var(--text-subtle);
+      color: var(--text-main);
       display: grid;
       gap: 4px;
       line-height: 1.5;
@@ -273,6 +278,10 @@
       font-size: 15px;
       font-weight: 600;
       letter-spacing: 0.1px;
+    }
+    .page-footer-line:first-child {
+      font-size: 16px;
+      font-weight: 700;
     }
     @media (max-width: 860px) {
       .questionnaire-row { grid-template-columns: 1fr; margin-bottom: 10px; }
@@ -411,8 +420,10 @@
       </form>
 
       <div class="page-footer" aria-label="page footer">
-        <div class="page-footer-line">{{ ui.footer_provider }}</div>
-        <div class="page-footer-line">{{ ui.footer_contact }}</div>
+        <div class="page-footer-card">
+          <div class="page-footer-line">{{ ui.footer_provider }}</div>
+          <div class="page-footer-line">{{ ui.footer_contact }}</div>
+        </div>
       </div>
     </div>
   </div>

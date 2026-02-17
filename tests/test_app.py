@@ -67,6 +67,10 @@ def test_admin_report_renders_section_cards_and_metric_chips(tmp_path, monkeypat
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
+    assert "--bg-meta:" in html
+    assert "--border-meta:" in html
+    assert "--shadow-soft:" in html
+    assert "max-width: 880px;" in html
     assert html.count('class="section-card"') >= 2
     assert html.count('class="section-title"') >= 2
     assert html.count('class="section-body"') >= 2
@@ -102,6 +106,10 @@ def test_bilingual_footer_on_survey_and_admin_pages(tmp_path, monkeypatch):
     assert survey_en_html.count('class="page-footer-line"') >= 2
     assert admin_zh_html.count('class="page-footer-line"') >= 2
     assert admin_en_html.count('class="page-footer-line"') >= 2
+    assert 'class="page-footer-card"' in survey_zh_html
+    assert 'class="page-footer-card"' in survey_en_html
+    assert 'class="page-footer-card"' in admin_zh_html
+    assert 'class="page-footer-card"' in admin_en_html
 
     assert "提供者: Charles" in survey_zh_html
     assert "若有任何需求，請不吝與我聯繫" in survey_zh_html

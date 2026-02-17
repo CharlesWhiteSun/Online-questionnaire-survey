@@ -10,8 +10,11 @@
       --text-main: #1f2328;
       --text-subtle: #57606a;
       --bg-surface: #ffffff;
+      --shadow-soft: 0 2px 8px rgba(0,0,0,0.08);
       --border-soft: #d8dee4;
       --bg-subtle: #f6f8fa;
+      --bg-meta: #eef6ff;
+      --border-meta: #cce1ff;
       --bg-tag: #eef6ff;
       --border-tag: #cce1ff;
       --theme-light: #9ec5ff;
@@ -23,8 +26,11 @@
       --text-main: #17241f;
       --text-subtle: #355246;
       --bg-surface: #f7fbf8;
+      --shadow-soft: 0 2px 10px rgba(23,36,31,0.10);
       --border-soft: #b9cec2;
       --bg-subtle: #edf5ef;
+      --bg-meta: #e6f2eb;
+      --border-meta: #bad5c6;
       --bg-tag: #e6f2eb;
       --border-tag: #bad5c6;
       --theme-light: #9ec5ff;
@@ -36,8 +42,11 @@
       --text-main: #e6edf3;
       --text-subtle: #a8b3bf;
       --bg-surface: #1a2129;
+      --shadow-soft: 0 2px 12px rgba(0,0,0,0.45);
       --border-soft: #34404d;
       --bg-subtle: #1f2a35;
+      --bg-meta: #253545;
+      --border-meta: #4a6680;
       --bg-tag: #253545;
       --border-tag: #3f5870;
       --theme-light: #a2c5ff;
@@ -263,10 +272,17 @@
     }
     .page-footer {
       margin-top: 18px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border-soft);
+    }
+    .page-footer-card {
+      background: var(--bg-meta);
+      border: 1px solid var(--border-meta);
+      border-radius: 10px;
+      box-shadow: var(--shadow-soft);
+      padding: 14px 12px 12px;
+      max-width: 880px;
+      margin: 0 auto;
       text-align: center;
-      color: var(--text-subtle);
+      color: var(--text-main);
       display: grid;
       gap: 4px;
       line-height: 1.5;
@@ -275,6 +291,10 @@
       font-size: 15px;
       font-weight: 600;
       letter-spacing: 0.1px;
+    }
+    .page-footer-line:first-child {
+      font-size: 16px;
+      font-weight: 700;
     }
 
     @media (max-width: 900px) {
@@ -380,8 +400,10 @@
     {% endif %}
 
     <div class="page-footer" aria-label="page footer">
-      <div class="page-footer-line">{{ admin_ui.footer_provider }}</div>
-      <div class="page-footer-line">{{ admin_ui.footer_contact }}</div>
+      <div class="page-footer-card">
+        <div class="page-footer-line">{{ admin_ui.footer_provider }}</div>
+        <div class="page-footer-line">{{ admin_ui.footer_contact }}</div>
+      </div>
     </div>
   </div>
 
