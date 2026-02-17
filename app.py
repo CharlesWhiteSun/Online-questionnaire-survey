@@ -181,6 +181,8 @@ def build_ui_texts(lang: str) -> dict:
             "survey_label": "Survey",
             "lang_zh": "中文",
             "lang_en": "EN",
+            "footer_provider": "Provided by: Charles",
+            "footer_contact": "If you have any requirements, please feel free to contact me.",
         }
 
     return {
@@ -194,6 +196,8 @@ def build_ui_texts(lang: str) -> dict:
         "survey_label": "問卷",
         "lang_zh": "中文",
         "lang_en": "EN",
+        "footer_provider": "提供者: Charles",
+        "footer_contact": "若有任何需求，請不吝與我聯繫",
     }
 
 
@@ -217,6 +221,8 @@ def build_admin_ui_texts(lang: str) -> dict:
             "unknown_text": "Unknown",
             "lang_zh": "中文",
             "lang_en": "EN",
+            "footer_provider": "Provided by: Charles",
+            "footer_contact": "If you have any requirements, please feel free to contact me.",
         }
 
     return {
@@ -237,6 +243,8 @@ def build_admin_ui_texts(lang: str) -> dict:
         "unknown_text": "未知",
         "lang_zh": "中文",
         "lang_en": "EN",
+        "footer_provider": "提供者: Charles",
+        "footer_contact": "若有任何需求，請不吝與我聯繫",
     }
 
 

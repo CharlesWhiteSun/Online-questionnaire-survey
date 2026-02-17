@@ -77,3 +77,38 @@ def test_admin_report_renders_section_cards_and_metric_chips(tmp_path, monkeypat
     assert 'class="metric-chip metric-chip-questionnaire">Login → Main Action → Submit</span>' in html
     assert 'class="metric-chip metric-chip-questionnaire">Search → View → Export</span>' in html
     assert "Login → Main Action → Submit；Search → View → Export" not in html
+
+
+def test_bilingual_footer_on_survey_and_admin_pages(tmp_path, monkeypatch):
+    client = _build_client_with_temp_db(tmp_path, monkeypatch)
+    monkeypatch.setattr(survey_app, "is_survey_open", lambda: True)
+
+    survey_zh = client.get("/q/at?lang=zh-TW")
+    survey_en = client.get("/q/at?lang=en")
+    admin_zh = client.get("/admin/report?lang=zh-TW")
+    admin_en = client.get("/admin/report?lang=en")
+
+    assert survey_zh.status_code == 200
+    assert survey_en.status_code == 200
+    assert admin_zh.status_code == 200
+    assert admin_en.status_code == 200
+
+    survey_zh_html = survey_zh.get_data(as_text=True)
+    survey_en_html = survey_en.get_data(as_text=True)
+    admin_zh_html = admin_zh.get_data(as_text=True)
+    admin_en_html = admin_en.get_data(as_text=True)
+
+    assert survey_zh_html.count('class="page-footer-line"') >= 2
+    assert survey_en_html.count('class="page-footer-line"') >= 2
+    assert admin_zh_html.count('class="page-footer-line"') >= 2
+    assert admin_en_html.count('class="page-footer-line"') >= 2
+
+    assert "提供者: Charles" in survey_zh_html
+    assert "若有任何需求，請不吝與我聯繫" in survey_zh_html
+    assert "Provided by: Charles" in survey_en_html
+    assert "If you have any requirements, please feel free to contact me." in survey_en_html
+
+    assert "提供者: Charles" in admin_zh_html
+    assert "若有任何需求，請不吝與我聯繫" in admin_zh_html
+    assert "Provided by: Charles" in admin_en_html
+    assert "If you have any requirements, please feel free to contact me." in admin_en_html

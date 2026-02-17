@@ -261,6 +261,21 @@
       padding: 18px;
       color: var(--text-subtle);
     }
+    .page-footer {
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-soft);
+      text-align: center;
+      color: var(--text-subtle);
+      display: grid;
+      gap: 4px;
+      line-height: 1.5;
+    }
+    .page-footer-line {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.1px;
+    }
 
     @media (max-width: 900px) {
       .summary-grid { grid-template-columns: 1fr; }
@@ -363,6 +378,11 @@
     {% else %}
       <div class="empty">{{ admin_ui.empty_text }}</div>
     {% endif %}
+
+    <div class="page-footer" aria-label="page footer">
+      <div class="page-footer-line">{{ admin_ui.footer_provider }}</div>
+      <div class="page-footer-line">{{ admin_ui.footer_contact }}</div>
+    </div>
   </div>
 
 <script>
