@@ -1,3 +1,4 @@
+import io
 from datetime import datetime
 
 import app as survey_app
@@ -43,6 +44,15 @@ def test_admin_report_renders_compact_parallel_cards(tmp_path, monkeypatch):
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Automation Testing Adoption PoC Needs Interview Form" in html
+    assert 'class="report-actions"' not in html
+    assert 'class="filter-export-actions"' in html
+    assert "padding: 8px 14px;" in html
+    assert "min-height: 24px;" in html
+    assert '<a class="export-btn" href="/admin/report/export.csv?lang=en">CSV</a>' in html
+    assert '<a class="export-btn pdf-btn" href="/admin/report/export.pdf?lang=en">PDF</a>' in html
+    assert 'class="selected-date-actions"' not in html
+    assert 'id="inline-import-file-input"' not in html
+    assert 'id="inline-import-trigger"' not in html
     assert 'class="record-grid"' in html
     assert 'class="record-card"' in html
     assert 'id="per-page-select" name="per_page"' in html
@@ -188,6 +198,32 @@ def test_admin_report_pagination_default_10_and_next_page(tmp_path, monkeypatch)
     assert '<option value="10" selected>' in html1
     assert "Page 1 / 2" in html1
     assert "Page 2 / 2" in html2
+
+
+def test_admin_report_import_csv_endpoint(tmp_path, monkeypatch):
+    client = _build_client_with_temp_db(tmp_path, monkeypatch)
+    monkeypatch.setattr(survey_app, "now", lambda: datetime(2026, 2, 17, 9, 0, 1))
+
+    csv_content = (
+        "提交時間,訪談部門,訪談人員,主測系統,主測角色\n"
+        "2026-02-17 08:59:59,QA,小花,ERP,審核者\n"
+    )
+    response = client.post(
+        "/admin/report/import.csv?lang=zh-TW",
+        data={
+            "date": "2026-02-17",
+            "page": "1",
+            "per_page": "10",
+            "import_file": (io.BytesIO(csv_content.encode("utf-8")), "import.csv"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "🏢 QA" in html
+    assert "📇 小花" in html
 
 
 def test_bilingual_footer_on_survey_and_admin_pages(tmp_path, monkeypatch):

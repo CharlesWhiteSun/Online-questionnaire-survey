@@ -118,10 +118,17 @@
       background: #3f8b56;
       color: #fff;
       border-radius: 8px;
-      padding: 10px 14px;
-      font-weight: 600;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1.2;
+      min-height: 24px;
       border: 0;
       cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .export-btn:hover { background: #327046; }
     .pdf-btn {
@@ -157,6 +164,11 @@
       border: 1px solid var(--border-soft);
       border-radius: 10px;
       padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
       margin-bottom: 12px;
     }
     .filter-form {
@@ -172,8 +184,28 @@
       font-weight: 600;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 8px;
       flex-wrap: wrap;
+    }
+    .selected-date-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .selected-date-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .import-inline-form {
+      margin: 0;
+      display: inline-flex;
+    }
+    .inline-file-input {
+      display: none;
     }
     .filter-label {
       color: var(--text-subtle);
@@ -201,6 +233,21 @@
     }
     .filter-btn:hover {
       background: var(--bg-page);
+    }
+    .filter-export-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .filter-actions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .panel-card {
@@ -572,6 +619,7 @@
       .control-panel { align-items: flex-end; }
       .record-grid { display: grid; grid-template-columns: 1fr; }
       .date-input { min-width: 0; width: 100%; }
+      .filter-export-actions { width: 100%; justify-content: flex-start; }
     }
   </style>
 </head>
@@ -608,13 +656,6 @@
         <div class="summary-value" style="font-size: 18px;">{{ summary.latest_submitted_at }}</div>
       </div>
     </div>
-    <div class="report-actions">
-      <div class="toolbar">
-        <a class="export-btn" href="{{ export_url }}">CSV</a>
-        <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">PDF</a>
-      </div>
-    </div>
-
     <div class="filter-bar">
       <form class="filter-form" method="get" action="{{ url_for('admin_report') }}">
         <input type="hidden" name="lang" value="{{ current_lang }}">
@@ -623,11 +664,17 @@
         <button type="submit" class="filter-btn">{{ admin_ui.filter_apply }}</button>
         <a class="filter-btn" href="{{ url_for('admin_report', lang=current_lang) }}">{{ admin_ui.filter_reset }}</a>
       </form>
+      <div class="filter-export-actions">
+        <a class="export-btn" href="{{ export_url }}">CSV</a>
+        <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">PDF</a>
+      </div>
     </div>
     {% if selected_date_display %}
     <div class="filter-selected">
-      <span>{{ admin_ui.filter_selected_date }}:</span>
-      <span class="selected-date-chip">{{ selected_date_display }}</span>
+      <div class="selected-date-left">
+        <span>{{ admin_ui.filter_selected_date }}:</span>
+        <span class="selected-date-chip">{{ selected_date_display }}</span>
+      </div>
     </div>
     {% endif %}
 

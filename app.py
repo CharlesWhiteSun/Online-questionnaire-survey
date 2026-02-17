@@ -230,6 +230,8 @@ def build_admin_ui_texts(lang: str) -> dict:
             "page_label": "Page",
             "prev_page": "Prev",
             "next_page": "Next",
+            "data_export": "Export",
+            "data_import": "Import",
             "delete_aria": "Delete this record",
             "delete_confirm_template": "Are you sure you want to delete the data for Department {department}, Interviewee {person}?",
             "unknown_text": "Unknown",
@@ -266,6 +268,8 @@ def build_admin_ui_texts(lang: str) -> dict:
         "page_label": "頁次",
         "prev_page": "上一頁",
         "next_page": "下一頁",
+        "data_export": "匯出",
+        "data_import": "匯入",
         "delete_aria": "刪除此筆資料",
         "delete_confirm_template": "確認要刪除此 {department} 部門 {person} 人員的資料嗎?",
         "unknown_text": "未知",
@@ -583,6 +587,79 @@ def build_report_csv(records: list[dict]) -> str:
     return "\ufeff" + output.getvalue()
 
 
+def normalize_import_submitted_at(value: str) -> str:
+    raw_value = str(value).strip()
+    if not raw_value or raw_value == "—":
+        return now().isoformat(timespec="seconds")
+
+    for fmt in ["%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"]:
+        try:
+            return datetime.strptime(raw_value, fmt).isoformat(timespec="seconds")
+        except ValueError:
+            continue
+    return now().isoformat(timespec="seconds")
+
+
+def split_multiselect_import_value(value: str) -> tuple[list[str], str]:
+    text = str(value).strip()
+    if not text or text == "—":
+        return [], ""
+
+    selected: list[str] = []
+    other_value = ""
+    for part in [item.strip() for item in text.split("；") if item.strip()]:
+        if part.startswith("其他："):
+            other_value = part.replace("其他：", "", 1).strip()
+            continue
+        if part.lower().startswith("other:"):
+            other_value = part.split(":", 1)[1].strip() if ":" in part else ""
+            continue
+        selected.append(part)
+
+    return selected, other_value
+
+
+def import_report_csv(csv_text: str) -> int:
+    content = str(csv_text).lstrip("\ufeff")
+    reader = csv.DictReader(io.StringIO(content))
+    if not reader.fieldnames:
+        return 0
+
+    import_count = 0
+    detail_entry_map = {entry["label"]: entry for entry in REPORT_DEFINITION}
+
+    for row in reader:
+        if not row:
+            continue
+
+        answers: dict = {
+            "department_name": str(row.get("訪談部門", "")).strip(),
+            "person_name": str(row.get("訪談人員", "")).strip(),
+            "main_system": str(row.get("主測系統", "")).strip(),
+            "main_role": str(row.get("主測角色", "")).strip(),
+        }
+
+        for label, entry in detail_entry_map.items():
+            raw_value = str(row.get(label, "")).strip()
+            if entry["type"] == "multiselect":
+                selected_values, other_value = split_multiselect_import_value(raw_value)
+                canonical_values = [canonicalize_selected_option(entry, value) for value in selected_values]
+                answers[entry["name"]] = canonical_values
+                if entry.get("allow_other"):
+                    answers[f"{entry['name']}_other"] = other_value
+            else:
+                answers[entry["name"]] = "" if raw_value == "—" else raw_value
+
+        if not answers["department_name"] or not answers["person_name"]:
+            continue
+
+        submitted_at = normalize_import_submitted_at(str(row.get("提交時間", "")))
+        save_response_record(answers, submitted_at)
+        import_count += 1
+
+    return import_count
+
+
 def build_report_pdf(records: list[dict], summary: dict) -> bytes:
     buffer = io.BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
@@ -746,10 +823,10 @@ def collect_answers(fields: list[dict]) -> dict:
     return payload
 
 
-def upsert_response(answers: dict) -> None:
+def save_response_record(answers: dict, submitted_at: str | None = None) -> None:
     department_name = str(answers.get("department_name", "")).strip()
     person_name = str(answers.get("person_name", "")).strip()
-    submitted_at = now().isoformat(timespec="seconds")
+    persisted_at = submitted_at or now().isoformat(timespec="seconds")
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
@@ -760,9 +837,13 @@ def upsert_response(answers: dict) -> None:
             DO UPDATE SET answers_json = excluded.answers_json,
                           submitted_at = excluded.submitted_at
             """,
-            (SURVEY_SLUG, department_name, person_name, json.dumps(answers, ensure_ascii=False), submitted_at),
+            (SURVEY_SLUG, department_name, person_name, json.dumps(answers, ensure_ascii=False), persisted_at),
         )
         conn.commit()
+
+
+def upsert_response(answers: dict) -> None:
+    save_response_record(answers)
 
 
 def apply_common_cookies(response, lang: str):
@@ -942,6 +1023,21 @@ def admin_report_export_pdf():
     response.headers["Content-Type"] = "application/pdf"
     response.headers["Content-Disposition"] = f"attachment; filename={filename}"
     return response
+
+
+@app.post("/admin/report/import.csv")
+def admin_report_import_csv():
+    lang = get_lang()
+    selected_date = request.form.get("date", "").strip()
+    page = request.form.get("page", "1").strip()
+    per_page = request.form.get("per_page", "10").strip()
+
+    uploaded = request.files.get("import_file")
+    if uploaded and uploaded.filename:
+        payload = uploaded.read().decode("utf-8-sig", errors="ignore")
+        import_report_csv(payload)
+
+    return redirect(url_for("admin_report", lang=lang, date=selected_date, page=page, per_page=per_page))
 
 
 @app.post("/admin/report/delete/<int:record_id>")
