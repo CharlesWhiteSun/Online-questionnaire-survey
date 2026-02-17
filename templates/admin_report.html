@@ -197,15 +197,22 @@
     }
     .delete-one-btn:hover { background: #a40e26; }
     .section-title {
-      margin: 0 0 8px;
+      margin: 0 0 10px;
       font-size: 16px;
       font-weight: 700;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      padding: 8px 10px;
     }
     .section-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-soft);
       border-radius: 10px;
       padding: 12px;
+    }
+    .section-body {
+      padding-left: 14px;
     }
     .kv-grid {
       display: grid;
@@ -321,6 +328,7 @@
           </div>
           <div class="section-card">
             <h3 class="section-title">{{ admin_ui.basic_section }}</h3>
+            <div class="section-body">
             <div class="kv-grid">
               {% for item in record.basic_items %}
               <div class="k">{{ item.label }}</div>
@@ -331,10 +339,12 @@
               </div>
               {% endfor %}
             </div>
+            </div>
           </div>
 
           <div class="section-card">
             <h3 class="section-title">{{ admin_ui.questionnaire_section }}</h3>
+            <div class="section-body">
             <div class="kv-grid">
               {% for item in record.questionnaire_items %}
               <div class="k">{{ item.label }}</div>
@@ -344,6 +354,7 @@
                 {% endfor %}
               </div>
               {% endfor %}
+            </div>
             </div>
           </div>
         </div>
