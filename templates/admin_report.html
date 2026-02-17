@@ -899,7 +899,8 @@
   });
 
   const isAuthenticated = {{ is_authenticated | tojson }};
-  const timeoutSeconds = {{ session_timeout_seconds }};
+  const timeoutSeconds = Number({{ session_timeout_seconds }});
+  const resetTimerUrl = {{ session_reset_url | tojson }};
   const countdownChip = document.getElementById('logout-countdown');
   const resetTimerButton = document.getElementById('reset-logout-timer');
   const logoutForm = document.getElementById('logout-form');
@@ -911,24 +912,40 @@
   }
 
   if (isAuthenticated && countdownChip && logoutForm) {
-    let remainingSeconds = Number.isFinite(timeoutSeconds) ? timeoutSeconds : 600;
+    let remainingSeconds = Number.isFinite(timeoutSeconds) && timeoutSeconds > 0 ? timeoutSeconds : 0;
     countdownChip.textContent = formatCountdown(remainingSeconds);
 
-    const timerId = window.setInterval(() => {
-      remainingSeconds -= 1;
-      if (remainingSeconds <= 0) {
-        window.clearInterval(timerId);
-        logoutForm.submit();
-        return;
-      }
-      countdownChip.textContent = formatCountdown(remainingSeconds);
-    }, 1000);
-
-    if (resetTimerButton) {
-      resetTimerButton.addEventListener('click', () => {
-        remainingSeconds = Number.isFinite(timeoutSeconds) ? timeoutSeconds : 600;
+    if (remainingSeconds <= 0) {
+      logoutForm.submit();
+    } else {
+      const timerId = window.setInterval(() => {
+        remainingSeconds -= 1;
+        if (remainingSeconds <= 0) {
+          window.clearInterval(timerId);
+          logoutForm.submit();
+          return;
+        }
         countdownChip.textContent = formatCountdown(remainingSeconds);
-      });
+      }, 1000);
+
+      if (resetTimerButton) {
+        resetTimerButton.addEventListener('click', async () => {
+          try {
+            const response = await window.fetch(resetTimerUrl, { method: 'POST' });
+            if (!response.ok) {
+              return;
+            }
+            const payload = await response.json();
+            const serverRemaining = Number(payload.remaining_seconds);
+            if (Number.isFinite(serverRemaining) && serverRemaining > 0) {
+              remainingSeconds = serverRemaining;
+              countdownChip.textContent = formatCountdown(remainingSeconds);
+            }
+          } catch (error) {
+            console.error(error);
+          }
+        });
+      }
     }
   }
 

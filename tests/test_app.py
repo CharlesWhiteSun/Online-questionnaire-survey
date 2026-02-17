@@ -83,8 +83,9 @@ def test_admin_report_renders_compact_parallel_cards(tmp_path, monkeypatch):
     html = response.get_data(as_text=True)
     assert "Automation Testing Adoption PoC Needs Interview Form" in html
     assert 'class="report-actions"' not in html
-    assert 'class="filter-export-actions"' not in html
-    assert 'id="inline-import-trigger"' not in html
+    assert 'class="filter-export-actions"' in html
+    assert '>CSV<' in html
+    assert '>PDF<' in html
     assert 'class="selected-date-actions"' not in html
     assert 'id="inline-import-file-input"' not in html
     assert 'id="inline-import-trigger"' not in html
@@ -154,6 +155,41 @@ def test_admin_report_has_logout_countdown_and_reset_for_authenticated_user(tmp_
     assert html.find('class="auth-actions"') < html.find('class="lang-switch"')
 
 
+def test_admin_report_countdown_does_not_reset_after_refresh(tmp_path, monkeypatch):
+    client = _build_client_with_temp_db(tmp_path, monkeypatch)
+    current_time = {"value": datetime(2026, 2, 17, 9, 0, 0)}
+    monkeypatch.setattr(survey_app, "now", lambda: current_time["value"])
+
+    login_response = _login_report_user(client, "guest", "guest", "en")
+    assert login_response.status_code == 302
+
+    current_time["value"] = datetime(2026, 2, 17, 9, 3, 0)
+    response = client.get("/admin/report?lang=en")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "const timeoutSeconds = Number(420);" in html
+    assert "if (remainingSeconds <= 0) {\n      logoutForm.submit();\n      return;\n    }" not in html
+
+
+def test_admin_session_reset_endpoint_resets_remaining_seconds(tmp_path, monkeypatch):
+    client = _build_client_with_temp_db(tmp_path, monkeypatch)
+    current_time = {"value": datetime(2026, 2, 17, 9, 0, 0)}
+    monkeypatch.setattr(survey_app, "now", lambda: current_time["value"])
+
+    login_response = _login_report_user(client, "guest", "guest", "en")
+    assert login_response.status_code == 302
+
+    current_time["value"] = datetime(2026, 2, 17, 9, 5, 0)
+    reset_response = client.post("/admin/session/reset")
+    report_response = client.get("/admin/report?lang=en")
+
+    assert reset_response.status_code == 200
+    assert reset_response.get_json()["remaining_seconds"] == 600
+    assert report_response.status_code == 200
+    assert "const timeoutSeconds = Number(600);" in report_response.get_data(as_text=True)
+
+
 def test_admin_login_page_hides_heading_and_keeps_lang_spacing(tmp_path, monkeypatch):
     client = _build_client_with_temp_db(tmp_path, monkeypatch)
 
@@ -185,13 +221,23 @@ def test_export_csv_uses_normalized_value_without_crash(tmp_path, monkeypatch):
 
 def test_admin_report_date_filter_only_shows_selected_date(tmp_path, monkeypatch):
     client = _build_client_with_temp_db(tmp_path, monkeypatch)
-    timestamps = iter(
-        [
-            datetime(2026, 2, 16, 8, 59, 59),
-            datetime(2026, 2, 17, 9, 0, 1),
-        ]
-    )
-    monkeypatch.setattr(survey_app, "now", lambda: next(timestamps))
+    timestamps = [
+        datetime(2026, 2, 16, 8, 59, 59),
+        datetime(2026, 2, 17, 9, 0, 1),
+        datetime(2026, 2, 17, 9, 0, 1),
+        datetime(2026, 2, 17, 9, 0, 1),
+        datetime(2026, 2, 17, 9, 0, 1),
+    ]
+    state = {"idx": 0}
+
+    def fake_now():
+        idx = state["idx"]
+        if idx < len(timestamps):
+            state["idx"] = idx + 1
+            return timestamps[idx]
+        return timestamps[-1]
+
+    monkeypatch.setattr(survey_app, "now", fake_now)
 
     first = _sample_answers("登入主功能操作送出")
     first["department_name"] = "QA"
@@ -329,7 +375,7 @@ def test_admin_report_import_csv_endpoint(tmp_path, monkeypatch):
     assert "📇 小花" in html
 
 
-def test_admin_report_export_import_forbidden_without_special_admin(tmp_path, monkeypatch):
+def test_admin_report_export_import_forbidden_without_login(tmp_path, monkeypatch):
     client = _build_client_with_temp_db(tmp_path, monkeypatch)
 
     export_response = client.get("/admin/report/export.csv")
@@ -352,17 +398,25 @@ def test_admin_report_redirects_to_login_when_not_authenticated(tmp_path, monkey
     assert "/admin/login" in response.headers["Location"]
 
 
-def test_guest_can_view_report_but_cannot_export(tmp_path, monkeypatch):
+def test_guest_can_view_and_export_but_cannot_import(tmp_path, monkeypatch):
     client = _build_client_with_temp_db(tmp_path, monkeypatch)
     survey_app.upsert_response(_sample_answers("登入主功能操作送出"))
 
     login_response = _login_report_user(client, "guest", "guest", "en")
     report_response = client.get("/admin/report?lang=en")
-    export_response = client.get("/admin/report/export.csv")
+    export_csv_response = client.get("/admin/report/export.csv")
+    export_pdf_response = client.get("/admin/report/export.pdf")
+    import_response = client.post(
+        "/admin/report/import.csv",
+        data={"import_file": (io.BytesIO(b"header\n"), "import.csv")},
+        content_type="multipart/form-data",
+    )
 
     assert login_response.status_code == 302
     assert report_response.status_code == 200
-    assert export_response.status_code == 403
+    assert export_csv_response.status_code == 200
+    assert export_pdf_response.status_code == 200
+    assert import_response.status_code == 403
 
 
 def test_bilingual_footer_on_survey_and_admin_pages(tmp_path, monkeypatch):

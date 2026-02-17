@@ -13,7 +13,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfgen import canvas
 
-from flask import Flask, make_response, redirect, render_template, request, url_for
+from flask import Flask, jsonify, make_response, redirect, render_template, request, url_for
 
 from survey_config import (
     CLOSED_MESSAGE_BODY,
@@ -36,6 +36,7 @@ GUEST_USERNAME_ENV = "SURVEY_GUEST_USERNAME"
 GUEST_PASSWORD_ENV = "SURVEY_GUEST_PASSWORD"
 ADMIN_USERNAME_ENV = "SURVEY_ADMIN_USERNAME"
 ADMIN_PASSWORD_ENV = "SURVEY_ADMIN_PASSWORD"
+REPORT_SESSION_TIMEOUT_SECONDS = 60 * 10
 DEFAULT_LANG = "zh-TW"
 SUPPORTED_LANGS = {"zh-TW", "en"}
 
@@ -922,8 +923,18 @@ def build_auth_cookie_token(role: str) -> str:
     return f"guest:{password}"
 
 
-def set_report_auth_cookie(response, role: str):
-    response.set_cookie(REPORT_AUTH_COOKIE_NAME, build_auth_cookie_token(role), max_age=60 * 60 * 8, httponly=True)
+def build_report_auth_cookie_value(role: str, expires_at: int) -> str:
+    return f"{build_auth_cookie_token(role)}|{expires_at}"
+
+
+def set_report_auth_cookie(response, role: str, expires_at: int | None = None):
+    cookie_expires_at = expires_at if expires_at is not None else int(now().timestamp()) + REPORT_SESSION_TIMEOUT_SECONDS
+    response.set_cookie(
+        REPORT_AUTH_COOKIE_NAME,
+        build_report_auth_cookie_value(role, cookie_expires_at),
+        max_age=60 * 60 * 8,
+        httponly=True,
+    )
     return response
 
 
@@ -932,13 +943,36 @@ def clear_report_auth_cookie(response):
     return response
 
 
-def resolve_current_user_role() -> str | None:
+def resolve_report_auth_state() -> tuple[str | None, int]:
     cookie_value = request.cookies.get(REPORT_AUTH_COOKIE_NAME, "")
-    if cookie_value == build_auth_cookie_token("admin"):
-        return "admin"
-    if cookie_value == build_auth_cookie_token("guest"):
-        return "guest"
-    return None
+    if not cookie_value or "|" not in cookie_value:
+        return None, 0
+
+    token, expires_raw = cookie_value.rsplit("|", 1)
+    try:
+        expires_at = int(expires_raw)
+    except ValueError:
+        return None, 0
+
+    remaining_seconds = expires_at - int(now().timestamp())
+    if remaining_seconds <= 0:
+        return None, 0
+
+    if token == build_auth_cookie_token("admin"):
+        return "admin", remaining_seconds
+    if token == build_auth_cookie_token("guest"):
+        return "guest", remaining_seconds
+    return None, 0
+
+
+def resolve_current_user_role() -> str | None:
+    role, _ = resolve_report_auth_state()
+    return role
+
+
+def resolve_session_remaining_seconds() -> int:
+    _, remaining_seconds = resolve_report_auth_state()
+    return remaining_seconds
 
 
 def ensure_report_viewer() -> bool:
@@ -1002,6 +1036,17 @@ def admin_logout():
     response = make_response(redirect(url_for("admin_login", lang=lang)))
     response = clear_report_auth_cookie(response)
     return apply_common_cookies(response, lang)
+
+
+@app.post("/admin/session/reset")
+def admin_session_reset():
+    role = resolve_current_user_role()
+    if role not in {"guest", "admin"}:
+        return "Forbidden", 403
+
+    response = make_response(jsonify({"remaining_seconds": REPORT_SESSION_TIMEOUT_SECONDS}))
+    response = set_report_auth_cookie(response, role)
+    return response
 
 
 @app.get("/")
@@ -1106,14 +1151,15 @@ def survey(slug: str):
 @app.get("/admin/report")
 def admin_report():
     lang = get_lang()
-    if not ensure_report_viewer():
+    current_role, session_remaining_seconds = resolve_report_auth_state()
+    if current_role not in {"guest", "admin"}:
         next_url = request.full_path.rstrip("?")
         response = make_response(redirect(url_for("admin_login", lang=lang, next=next_url)))
+        response = clear_report_auth_cookie(response)
         return apply_common_cookies(response, lang)
 
-    current_role = resolve_current_user_role()
     admin_ui = build_admin_ui_texts(lang)
-    can_manage_exports = current_role == "admin"
+    can_manage_exports = bool(current_role)
     selected_date = request.args.get("date", "").strip()
     page = normalize_positive_int(request.args.get("page"), 1)
     per_page = normalize_positive_int(request.args.get("per_page"), 10)
@@ -1149,7 +1195,8 @@ def admin_report():
             allowed_per_page=allowed_per_page,
             can_manage_exports=can_manage_exports,
             is_authenticated=bool(current_role),
-            session_timeout_seconds=600,
+            session_timeout_seconds=session_remaining_seconds,
+            session_reset_url=url_for("admin_session_reset"),
             admin_login_url=url_for("admin_login", lang=lang, next=url_for("admin_report", lang=lang, date=selected_date, page=current_page, per_page=per_page)),
             admin_logout_url=url_for("admin_logout", lang=lang),
             export_url=url_for("admin_report_export_csv", lang=lang),
@@ -1167,7 +1214,7 @@ def admin_report():
 
 @app.get("/admin/report/export.csv")
 def admin_report_export_csv():
-    if not ensure_special_admin():
+    if not ensure_report_viewer():
         return "Forbidden", 403
 
     records = get_report_records()
@@ -1182,7 +1229,7 @@ def admin_report_export_csv():
 
 @app.get("/admin/report/export.pdf")
 def admin_report_export_pdf():
-    if not ensure_special_admin():
+    if not ensure_report_viewer():
         return "Forbidden", 403
 
     records = get_report_records()
