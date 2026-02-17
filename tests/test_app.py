@@ -68,6 +68,10 @@ def test_admin_report_renders_section_cards_and_metric_chips(tmp_path, monkeypat
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert html.count('class="section-card"') >= 2
-    assert 'class="metric-chip">Login → Main Action → Submit</span>' in html
-    assert 'class="metric-chip">Search → View → Export</span>' in html
+    assert 'class="report-actions"' in html
+    assert html.index('class="summary-grid"') < html.index('class="report-actions"')
+    assert 'metric-chip metric-chip-basic' in html
+    assert 'metric-chip metric-chip-questionnaire' in html
+    assert 'class="metric-chip metric-chip-questionnaire">Login → Main Action → Submit</span>' in html
+    assert 'class="metric-chip metric-chip-questionnaire">Search → View → Export</span>' in html
     assert "Login → Main Action → Submit；Search → View → Export" not in html

@@ -121,7 +121,12 @@
     .pdf-btn:hover {
       background: #b4766d;
     }
-    .toolbar { display: inline-flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .report-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin: -4px 0 16px;
+    }
+    .toolbar { display: inline-flex; gap: 8px; align-items: center; }
 
     .summary-grid {
       display: grid;
@@ -229,12 +234,18 @@
       display: inline-flex;
       align-items: center;
       border-radius: 999px;
-      border: 1px solid var(--border-tag);
-      background: var(--bg-tag);
       color: var(--text-main);
       padding: 4px 10px;
       font-size: 13px;
       line-height: 1.35;
+    }
+    .metric-chip-basic {
+      border: 1px solid var(--border-soft);
+      background: var(--bg-subtle);
+    }
+    .metric-chip-questionnaire {
+      border: 1px solid var(--border-tag);
+      background: var(--bg-tag);
     }
     .empty {
       background: var(--bg-surface);
@@ -283,10 +294,12 @@
       <div class="summary-card">
         <div class="summary-title">{{ admin_ui.latest_submitted_at }}</div>
         <div class="summary-value" style="font-size: 18px;">{{ summary.latest_submitted_at }}</div>
-        <div class="toolbar">
-          <a class="export-btn" href="{{ export_url }}">CSV</a>
-          <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">PDF</a>
-        </div>
+      </div>
+    </div>
+    <div class="report-actions">
+      <div class="toolbar">
+        <a class="export-btn" href="{{ export_url }}">CSV</a>
+        <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">PDF</a>
       </div>
     </div>
 
@@ -313,7 +326,7 @@
               <div class="k">{{ item.label }}</div>
               <div class="v">
                 {% for chip in item.chips %}
-                <span class="metric-chip">{{ chip }}</span>
+                <span class="metric-chip metric-chip-basic">{{ chip }}</span>
                 {% endfor %}
               </div>
               {% endfor %}
@@ -327,7 +340,7 @@
               <div class="k">{{ item.label }}</div>
               <div class="v">
                 {% for chip in item.chips %}
-                <span class="metric-chip">{{ chip }}</span>
+                <span class="metric-chip metric-chip-questionnaire">{{ chip }}</span>
                 {% endfor %}
               </div>
               {% endfor %}
