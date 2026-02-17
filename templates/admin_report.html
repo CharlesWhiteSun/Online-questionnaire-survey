@@ -166,10 +166,14 @@
       align-items: center;
     }
     .filter-selected {
-      margin-top: 8px;
+      margin: 0 0 12px;
       color: var(--text-subtle);
       font-size: 13px;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
     .filter-label {
       color: var(--text-subtle);
@@ -344,14 +348,9 @@
     }
     .basic-detail-table th,
     .basic-detail-table td {
-      border-left: 1px solid var(--border-soft);
       padding: 8px 10px;
       vertical-align: top;
       text-align: left;
-    }
-    .basic-detail-table th:first-child,
-    .basic-detail-table td:first-child {
-      border-left: 0;
     }
     .basic-detail-table .table-label {
       background: var(--bg-subtle);
@@ -361,6 +360,58 @@
       border-bottom: 1px solid var(--border-soft);
     }
     .basic-detail-table .table-detail {
+      background: var(--bg-surface);
+    }
+    .questionnaire-detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-surface);
+    }
+    .questionnaire-detail-table th,
+    .questionnaire-detail-table td {
+      border-top: 1px solid var(--border-soft);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .questionnaire-detail-table tr:first-child th,
+    .questionnaire-detail-table tr:first-child td {
+      border-top: 0;
+    }
+    .questionnaire-detail-table .question-cell {
+      width: 25%;
+      color: var(--text-subtle);
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--bg-subtle);
+    }
+    .question-label-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .question-index-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--border-tag);
+      background: var(--bg-tag);
+      color: var(--text-main);
+      padding: 2px 8px;
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+    .question-text {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .questionnaire-detail-table .answer-cell {
+      width: 75%;
       background: var(--bg-surface);
     }
     .detail-title {
@@ -410,6 +461,24 @@
       padding: 5px 10px;
       font-size: 13px;
       line-height: 1.25;
+      font-weight: 600;
+    }
+    .mini-chip-time {
+      background: var(--bg-subtle);
+      border-color: var(--border-soft);
+      color: var(--text-subtle);
+      font-weight: 700;
+    }
+    .selected-date-chip {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid var(--border-meta);
+      background: var(--bg-meta);
+      color: var(--text-main);
+      padding: 4px 10px;
+      font-size: 13px;
+      line-height: 1.3;
       font-weight: 600;
     }
     .empty {
@@ -503,10 +572,13 @@
         <button type="submit" class="filter-btn">{{ admin_ui.filter_apply }}</button>
         <a class="filter-btn" href="{{ url_for('admin_report', lang=current_lang) }}">{{ admin_ui.filter_reset }}</a>
       </form>
-      {% if selected_date_display %}
-      <div class="filter-selected">{{ admin_ui.filter_selected_date }}: {{ selected_date_display }}</div>
-      {% endif %}
     </div>
+    {% if selected_date_display %}
+    <div class="filter-selected">
+      <span>{{ admin_ui.filter_selected_date }}:</span>
+      <span class="selected-date-chip">{{ selected_date_display }}</span>
+    </div>
+    {% endif %}
 
     {% if records %}
       <section class="panel-card">
@@ -520,9 +592,9 @@
             <article class="record-card" data-record-id="{{ record.id }}">
               <button class="record-select" type="button" data-record-select="{{ record.id }}" aria-label="open details">
                 <div class="record-row">
-                  <span class="mini-chip">{{ record.submitted_time }}</span>
-                  <span class="mini-chip">{{ record.department_name }}</span>
-                  <span class="mini-chip">{{ record.person_name }}</span>
+                  <span class="mini-chip mini-chip-time">🕒 {{ record.submitted_time }}</span>
+                  <span class="mini-chip">🏢 {{ record.department_name }}</span>
+                  <span class="mini-chip">📇 {{ record.person_name }}</span>
                 </div>
               </button>
             </article>
@@ -562,18 +634,27 @@
                   </section>
                   <section class="detail-section">
                     <h3 class="detail-title detail-title-questionnaire">{{ admin_ui.questionnaire_section }}</h3>
-                    <div class="detail-items">
+                    <table class="questionnaire-detail-table" role="table">
                       {% for item in record.questionnaire_items %}
-                      <div class="detail-item">
-                        <div class="detail-label">{{ item.label }}</div>
-                        <div class="detail-value">
+                      <tr>
+                        <th class="question-cell" scope="row">
+                          <div class="question-label-wrap">
+                            {% if item.question_index %}
+                            <span class="question-index-chip">{{ item.question_index }}</span>
+                            {% endif %}
+                            <span class="question-text">{{ item.question_text }}</span>
+                          </div>
+                        </th>
+                        <td class="answer-cell">
+                          <div class="detail-value">
                           {% for chip in item.chips %}
                           <span class="mini-chip">{{ chip }}</span>
                           {% endfor %}
-                        </div>
-                      </div>
+                          </div>
+                        </td>
+                      </tr>
                       {% endfor %}
-                    </div>
+                    </table>
                   </section>
                 </div>
               </div>

@@ -413,6 +413,13 @@ def build_report_value_parts(entry: dict, answers: dict, lang: str) -> list[str]
     return [tr(text_value, lang)] if text_value else []
 
 
+def split_question_index_and_text(label: str) -> tuple[str, str]:
+    matched = re.match(r"^(?P<idx>\d+(?:-\d+)?)\.\s*(?P<text>.+)$", str(label).strip())
+    if not matched:
+        return "", str(label)
+    return matched.group("idx"), matched.group("text")
+
+
 def get_report_records(lang: str = "zh-TW") -> list[dict]:
     with sqlite3.connect(DB_PATH) as conn:
         rows = conn.execute(
@@ -452,10 +459,13 @@ def get_report_records(lang: str = "zh-TW") -> list[dict]:
         questionnaire_items = []
         for entry in REPORT_DEFINITION:
             chips = build_report_value_parts(entry, answers, lang)
+            question_index, question_text = split_question_index_and_text(tr(entry["label"], lang))
             item = {
                 "label": tr(entry["label"], lang),
                 "value": format_report_value(entry, answers, lang),
                 "chips": chips if chips else ["—"],
+                "question_index": question_index,
+                "question_text": question_text,
             }
             if entry["section"] == "basic":
                 basic_items.append(item)

@@ -46,11 +46,17 @@ def test_admin_report_renders_compact_parallel_cards(tmp_path, monkeypatch):
     assert 'class="record-grid"' in html
     assert 'class="record-card"' in html
     assert 'data-record-select=' in html
+    assert 'class="mini-chip mini-chip-time"' in html
+    assert "🕒" in html
+    assert "🏢" in html
+    assert "📇" in html
     assert 'id="detail-panel"' in html
     assert 'id="compact-list-body"' in html
     assert 'data-collapse-target="compact-list-body"' in html
     assert 'data-collapse-target="detail-panel-body"' in html
     assert 'class="basic-detail-table"' in html
+    assert 'class="questionnaire-detail-table"' in html
+    assert 'class="question-index-chip"' in html
     assert 'class="detail-title detail-title-basic"' in html
     assert 'class="detail-title detail-title-questionnaire"' in html
     assert '<th class="table-label" scope="col">' in html
@@ -99,10 +105,11 @@ def test_admin_report_date_filter_only_shows_selected_date(tmp_path, monkeypatch
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert 'type="date" value="2026-02-16"' in html
-    assert "已選日期: 2026/02/16" in html
-    assert ">08:59:59<" in html
-    assert ">QA<" in html
-    assert ">小花<" in html
+    assert "已選日期:" in html
+    assert 'class="selected-date-chip">2026/02/16</span>' in html
+    assert "🕒 08:59:59" in html
+    assert "🏢 QA" in html
+    assert "📇 小花" in html
     assert "09:00:01" not in html
     assert "研發" not in html
     assert "阿明" not in html
@@ -129,7 +136,8 @@ def test_admin_report_english_selected_date_display(tmp_path, monkeypatch):
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "Selected Date: Feb 17, 2026" in html
+    assert "Selected Date:" in html
+    assert 'class="selected-date-chip">Feb 17, 2026</span>' in html
     assert 'type="date" value="2026-02-17"' in html
 
 
@@ -142,7 +150,8 @@ def test_admin_report_defaults_date_filter_to_today(tmp_path, monkeypatch):
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert 'type="date" value="2026-02-17"' in html
-    assert "已選日期: 2026/02/17" in html
+    assert "已選日期:" in html
+    assert 'class="selected-date-chip">2026/02/17</span>' in html
 
 
 def test_bilingual_footer_on_survey_and_admin_pages(tmp_path, monkeypatch):
