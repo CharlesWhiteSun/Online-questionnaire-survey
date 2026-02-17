@@ -45,6 +45,9 @@ def test_admin_report_renders_compact_parallel_cards(tmp_path, monkeypatch):
     assert "Automation Testing Adoption PoC Needs Interview Form" in html
     assert 'class="record-grid"' in html
     assert 'class="record-card"' in html
+    assert 'id="per-page-select" name="per_page"' in html
+    assert '<option value="10" selected>' in html
+    assert "Page 1 / 1" in html
     assert 'data-record-select=' in html
     assert 'class="mini-chip mini-chip-time"' in html
     assert "🕒" in html
@@ -152,6 +155,39 @@ def test_admin_report_defaults_date_filter_to_today(tmp_path, monkeypatch):
     assert 'type="date" value="2026-02-17"' in html
     assert "已選日期:" in html
     assert 'class="selected-date-chip">2026/02/17</span>' in html
+
+
+def test_admin_report_pagination_default_10_and_next_page(tmp_path, monkeypatch):
+    client = _build_client_with_temp_db(tmp_path, monkeypatch)
+    base_time = datetime(2026, 2, 17, 9, 0, 0)
+    counter = {"value": 0}
+
+    def fake_now():
+        offset = counter["value"]
+        counter["value"] += 1
+        return base_time.replace(second=offset % 60)
+
+    monkeypatch.setattr(survey_app, "now", fake_now)
+
+    for idx in range(12):
+        answers = _sample_answers("登入主功能操作送出")
+        answers["department_name"] = f"Dept{idx}"
+        answers["person_name"] = f"Person{idx}"
+        survey_app.upsert_response(answers)
+
+    page1 = client.get("/admin/report?lang=en&date=2026-02-17")
+    page2 = client.get("/admin/report?lang=en&date=2026-02-17&page=2&per_page=10")
+
+    assert page1.status_code == 200
+    assert page2.status_code == 200
+
+    html1 = page1.get_data(as_text=True)
+    html2 = page2.get_data(as_text=True)
+
+    assert 'id="per-page-select" name="per_page"' in html1
+    assert '<option value="10" selected>' in html1
+    assert "Page 1 / 2" in html1
+    assert "Page 2 / 2" in html2
 
 
 def test_bilingual_footer_on_survey_and_admin_pages(tmp_path, monkeypatch):

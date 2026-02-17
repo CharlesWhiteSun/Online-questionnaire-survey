@@ -225,6 +225,26 @@
       font-weight: 700;
       color: var(--text-main);
     }
+    .panel-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .per-page-label {
+      color: var(--text-subtle);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .per-page-select {
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+      padding: 4px 8px;
+      font-size: 13px;
+    }
     .collapse-toggle {
       border: 1px solid var(--border-soft);
       border-radius: 6px;
@@ -254,6 +274,37 @@
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
+    }
+    .pager {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .pager-info {
+      color: var(--text-subtle);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .pager-nav {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .pager-btn {
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      padding: 6px 10px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .pager-btn.disabled {
+      opacity: 0.45;
+      pointer-events: none;
     }
     .record-card {
       background: var(--bg-surface);
@@ -584,7 +635,20 @@
       <section class="panel-card">
         <div class="panel-header">
           <h2 class="panel-title">{{ admin_ui.compact_panel_title }}</h2>
-          <button class="collapse-toggle" type="button" data-collapse-target="compact-list-body" aria-expanded="true" aria-label="{{ admin_ui.compact_panel_toggle }}">▾</button>
+          <div class="panel-tools">
+            <form method="get" action="{{ url_for('admin_report') }}" class="panel-tools">
+              <input type="hidden" name="lang" value="{{ current_lang }}">
+              <input type="hidden" name="date" value="{{ selected_date }}">
+              <input type="hidden" name="page" value="1">
+              <label class="per-page-label" for="per-page-select">{{ admin_ui.per_page_label }}</label>
+              <select class="per-page-select" id="per-page-select" name="per_page" onchange="this.form.submit()">
+                {% for page_size in allowed_per_page %}
+                <option value="{{ page_size }}" {% if per_page == page_size %}selected{% endif %}>{{ page_size }}</option>
+                {% endfor %}
+              </select>
+            </form>
+            <button class="collapse-toggle" type="button" data-collapse-target="compact-list-body" aria-expanded="true" aria-label="{{ admin_ui.compact_panel_toggle }}">▾</button>
+          </div>
         </div>
         <div class="panel-body" id="compact-list-body">
           <div class="record-grid">
@@ -660,6 +724,13 @@
               </div>
             </template>
           {% endfor %}
+          </div>
+          <div class="pager">
+            <div class="pager-info">{{ admin_ui.page_label }} {{ current_page }} / {{ total_pages }}</div>
+            <div class="pager-nav">
+              <a class="pager-btn {% if current_page <= 1 %}disabled{% endif %}" href="{{ prev_page_url }}">{{ admin_ui.prev_page }}</a>
+              <a class="pager-btn {% if current_page >= total_pages %}disabled{% endif %}" href="{{ next_page_url }}">{{ admin_ui.next_page }}</a>
+            </div>
           </div>
         </div>
       </section>
