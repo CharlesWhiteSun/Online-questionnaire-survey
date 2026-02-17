@@ -1,10 +1,17 @@
+import csv
+import io
 import json
+import os
 import re
 import sqlite3
-import uuid
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfgen import canvas
 
 from flask import Flask, make_response, redirect, render_template, request, url_for
 
@@ -21,7 +28,6 @@ from survey_config import (
 
 BASE_DIR = Path(__file__).parent
 DB_PATH = BASE_DIR / "survey.db"
-COOKIE_NAME = "survey_client_id"
 LANG_COOKIE_NAME = "survey_lang"
 DEFAULT_LANG = "zh-TW"
 SUPPORTED_LANGS = {"zh-TW", "en"}
@@ -31,96 +37,12 @@ INDEX_PATTERN = re.compile(r"^(?P<main>\d+)(?:-(?P<sub>\d+))?\.")
 
 EN_TRANSLATIONS = {
     "自動化測試導入 PoC 需求訪談表": "Automation Testing Adoption PoC Needs Interview Form",
-    "自動化測試導入需求訪談表": "Automation Testing Adoption Needs Interview Form",
     "問卷填寫時間已結束": "Survey Submission Window Closed",
     "本問卷已超過填寫期限，系統已停止收件。若您仍需補填或更新內容，請聯繫問卷管理者協助重新開放。": "This survey is past its submission deadline and is no longer accepting responses. If you still need to submit or update your response, please contact the survey administrator to reopen it.",
-    "已成功儲存。若您再次開啟同一連結並提交，系統會覆寫您先前的內容。": "Saved successfully. If you submit again from the same link and device, your previous response will be overwritten.",
+    "已成功儲存。若您再次開啟同一連結並提交，系統會覆寫您先前的內容。": "Saved successfully.",
     "找不到問卷": "Survey not found",
-    "訪談部門/人員": "Interview Department / Interviewee",
-    "訪談部門": "Department",
-    "例如：研發部": "e.g. Engineering Department",
-    "訪談人員": "Interviewee",
-    "例如：王小明": "e.g. Alex Wang",
-    "主測系統/角色": "Primary System / Role",
-    "主測系統": "Primary System",
-    "例如：ERP": "e.g. ERP",
-    "主測角色": "Primary Role",
-    "例如：審核者": "e.g. Reviewer",
-    "1. 自動化核心流程": "1. Automation Core Flows",
-    "登入→主功能操作→送出": "Login → Main Action → Submit",
-    "查詢→檢視→匯出": "Search → View → Export",
-    "新增→送審→審核完成": "Create → Submit for Approval → Approved",
-    "編輯→儲存→結果確認": "Edit → Save → Verify Result",
-    "2. 測試類型需求": "2. Required Test Types",
-    "Web UI 黑箱流程測試（End-to-End）": "Web UI Black-box Flow Testing (End-to-End)",
-    "多角色權限測試（Admin/User）": "Multi-role Permission Testing (Admin/User)",
-    "API 測試（非 UI）": "API Testing (Non-UI)",
-    "效能測試（壓力/負載）": "Performance Testing (Stress/Load)",
-    "安全測試（弱掃/登入防護）": "Security Testing (Vulnerability Scan/Login Protection)",
-    "3. 操作情境需求": "3. Required Operation Scenarios",
-    "驗證碼（Captcha）": "Captcha",
-    "OTP/簡訊驗證": "OTP / SMS Verification",
-    "SSO/第三方登入": "SSO / Third-party Login",
-    "多步驟表單": "Multi-step Form",
-    "彈跳視窗": "Pop-up Dialog",
-    "多頁籤操作": "Multi-tab Operations",
-    "檔案上傳": "File Upload",
-    "Excel/PDF 匯出": "Excel/PDF Export",
-    "4-1. 測試執行頻率": "4-1. Test Execution Frequency",
-    "改版前": "Before Release",
-    "每日定期跑": "Run Daily on Schedule",
-    "手動觸發即可": "Manual Trigger is Enough",
-    "需可指定 tag 版本驗證": "Need Validation by Specific Tag Version",
-    "4-2. 測試執行環境": "4-2. Test Execution Environment",
-    "測試環境（Demo）": "Testing Environment (Demo)",
-    "驗收環境（UAT）": "User Acceptance Environment (UAT)",
-    "正式環境（Prod）": "Production Environment (Prod)",
-    "本機即可": "Local Machine is Enough",
-    "5-1. 瀏覽器需求": "5-1. Browser Requirements",
-    "Chrome": "Chrome",
-    "Edge": "Edge",
-    "Firefox": "Firefox",
-    "Safari": "Safari",
-    "5-2. 裝置需求": "5-2. Device Requirements",
-    "PC Web": "PC Web",
-    "Mobile Web/APP": "Mobile Web/APP",
-    "需跨解析度測試": "Need Cross-resolution Testing",
-    "6-1. 測試角色需求": "6-1. Test Role Requirements",
-    "一般使用者": "General User",
-    "管理者 Admin": "Administrator (Admin)",
-    "審核者 Reviewer": "Reviewer",
-    "多部門角色切換": "Multi-department Role Switching",
-    "6-2. 帳號方式": "6-2. Account Setup",
-    "使用系統內建帳號": "Use Built-in System Accounts",
-    "提供固定測試帳號": "Provide Fixed Test Accounts",
-    "測試工具需自動建立帳號": "Testing Tool Must Auto-create Accounts",
-    "7. 報告與管理需求": "7. Reporting & Management Needs",
-    "自動測試報告（Pass/Fail）": "Automated Test Report (Pass/Fail)",
-    "測試截圖紀錄": "Test Screenshot Records",
-    "測試影片錄製": "Test Video Recording",
-    "回歸測試覆蓋清單": "Regression Coverage Checklist",
-    "管理者摘要報表": "Manager Summary Report",
-    "8. 整合需求": "8. Integration Needs",
-    "Github": "GitHub",
-    "Email 通知": "Email Notifications",
-    "API": "API",
-    "9-1. PoC 規模選擇": "9-1. PoC Scope Selection",
-    "單一流程驗證（1 條流程即可）": "Single Flow Verification (1 flow)",
-    "小型流程組合（2–3 條核心流程）": "Small Flow Set (2–3 core flows)",
-    "單一模組回歸測試（5–10 條案例）": "Single Module Regression (5–10 cases)",
-    "跨模組整合流程（包含多部門操作）": "Cross-module Integrated Flows (multi-department)",
-    "全系統自動化（不建議 PoC）": "Full-system Automation (Not Recommended for PoC)",
-    "9-2. PoC 驗收標準": "9-2. PoC Acceptance Criteria",
-    "核心流程可穩定重複執行": "Core flows can run repeatedly and stably",
-    "改版後可快速回歸驗證": "Fast regression validation after each release",
-    "測試結果可產出報告": "Test results can generate reports",
-    "團隊可自行維護腳本": "Team can maintain scripts independently",
-    "可作為後續擴大導入基礎": "Can serve as a foundation for scaled adoption",
-    "補充說明": "Additional Notes",
-    "可填寫其他需求、限制或補充背景": "You can add other requirements, constraints, or background details",
     "其他：請填寫": "Other: please specify",
 }
-
 
 
 def tr(text: str, lang: str) -> str:
@@ -129,14 +51,12 @@ def tr(text: str, lang: str) -> str:
     return text
 
 
-
 def normalize_lang(raw_lang: str | None) -> str:
     if not raw_lang:
         return DEFAULT_LANG
     if raw_lang.lower().startswith("en"):
         return "en"
     return DEFAULT_LANG
-
 
 
 def get_lang() -> str:
@@ -155,10 +75,8 @@ def get_lang() -> str:
     return DEFAULT_LANG
 
 
-
 def get_html_lang(lang: str) -> str:
     return "en" if lang == "en" else "zh-Hant"
-
 
 
 def build_ui_texts(lang: str) -> dict:
@@ -190,14 +108,11 @@ def build_ui_texts(lang: str) -> dict:
     }
 
 
-
 def localize_form_definition(lang: str) -> list[dict]:
     localized = deepcopy(FORM_DEFINITION)
-
     for field in localized:
         if "label" in field:
             field["label"] = tr(field["label"], lang)
-
         if "placeholder" in field:
             field["placeholder"] = tr(field["placeholder"], lang)
 
@@ -230,6 +145,203 @@ def build_open_window_parts(lang: str) -> dict:
     }
 
 
+def build_report_definition() -> list[dict]:
+    definition = []
+    for field in FORM_DEFINITION:
+        section = field.get("section", "questionnaire")
+        field_type = field["type"]
+
+        if field_type == "text_pair":
+            definition.append(
+                {
+                    "section": section,
+                    "type": "text",
+                    "name": field["left"]["name"],
+                    "label": field["left"]["label"],
+                }
+            )
+            definition.append(
+                {
+                    "section": section,
+                    "type": "text",
+                    "name": field["right"]["name"],
+                    "label": field["right"]["label"],
+                }
+            )
+            continue
+
+        definition.append(
+            {
+                "section": section,
+                "type": field_type,
+                "name": field["name"],
+                "label": field["label"],
+                "allow_other": field.get("allow_other", False),
+            }
+        )
+
+    return definition
+
+
+REPORT_DEFINITION = build_report_definition()
+
+
+def format_report_datetime(value: str) -> str:
+    try:
+        return datetime.fromisoformat(value).strftime("%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return value
+
+
+def format_report_value(entry: dict, answers: dict) -> str:
+    if entry["type"] == "multiselect":
+        selected = answers.get(entry["name"], [])
+        if not isinstance(selected, list):
+            selected = [str(selected)] if str(selected).strip() else []
+        selected_values = [str(item).strip() for item in selected if str(item).strip()]
+
+        if entry.get("allow_other"):
+            other_value = str(answers.get(f"{entry['name']}_other", "")).strip()
+            if other_value:
+                selected_values.append(f"其他：{other_value}")
+
+        return "；".join(selected_values) if selected_values else "—"
+
+    text_value = str(answers.get(entry["name"], "")).strip()
+    return text_value if text_value else "—"
+
+
+def get_report_records() -> list[dict]:
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            """
+            SELECT id, answers_json, submitted_at
+            FROM responses
+            WHERE survey_slug = ?
+            ORDER BY submitted_at DESC
+            """,
+            (SURVEY_SLUG,),
+        ).fetchall()
+
+    records = []
+    for row in rows:
+        try:
+            answers = json.loads(row[1])
+        except json.JSONDecodeError:
+            answers = {}
+
+        basic_items = []
+        questionnaire_items = []
+        for entry in REPORT_DEFINITION:
+            item = {"label": entry["label"], "value": format_report_value(entry, answers)}
+            if entry["section"] == "basic":
+                basic_items.append(item)
+            else:
+                questionnaire_items.append(item)
+
+        records.append(
+            {
+                "id": row[0],
+                "submitted_at": format_report_datetime(row[2]),
+                "department_name": str(answers.get("department_name", "")).strip() or "—",
+                "person_name": str(answers.get("person_name", "")).strip() or "—",
+                "main_system": str(answers.get("main_system", "")).strip() or "—",
+                "main_role": str(answers.get("main_role", "")).strip() or "—",
+                "basic_items": basic_items,
+                "questionnaire_items": questionnaire_items,
+                "answers": answers,
+            }
+        )
+
+    return records
+
+
+def build_report_summary(records: list[dict]) -> dict:
+    departments = {
+        record["department_name"]
+        for record in records
+        if record["department_name"] and record["department_name"] != "—"
+    }
+
+    return {
+        "total_submissions": len(records),
+        "department_count": len(departments),
+        "latest_submitted_at": records[0]["submitted_at"] if records else "—",
+    }
+
+
+def build_report_csv(records: list[dict]) -> str:
+    basic_columns = ["提交時間", "訪談部門", "訪談人員", "主測系統", "主測角色"]
+    excluded_basic_names = {"department_name", "person_name", "main_system", "main_role"}
+    detail_entries = [
+        entry
+        for entry in REPORT_DEFINITION
+        if entry["name"] not in excluded_basic_names
+    ]
+
+    output = io.StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(basic_columns + [entry["label"] for entry in detail_entries])
+
+    for record in records:
+        row = [
+            record["submitted_at"],
+            record["department_name"],
+            record["person_name"],
+            record["main_system"],
+            record["main_role"],
+        ]
+        row.extend(format_report_value(entry, record["answers"]) for entry in detail_entries)
+        writer.writerow(row)
+
+    return "\ufeff" + output.getvalue()
+
+
+def build_report_pdf(records: list[dict], summary: dict) -> bytes:
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
+    pdf.setFont("STSong-Light", 11)
+
+    page_width, page_height = A4
+    left = 40
+    y = page_height - 40
+
+    pdf.setFont("STSong-Light", 14)
+    pdf.drawString(left, y, f"管理者報表｜{SURVEY_TITLE}")
+    y -= 24
+
+    pdf.setFont("STSong-Light", 10)
+    pdf.drawString(left, y, f"提交總筆數：{summary['total_submissions']}")
+    y -= 16
+    pdf.drawString(left, y, f"部門數：{summary['department_count']}")
+    y -= 16
+    pdf.drawString(left, y, f"最新提交時間：{summary['latest_submitted_at']}")
+    y -= 24
+
+    for idx, record in enumerate(records, start=1):
+        lines = [
+            f"[{idx}] 提交時間：{record['submitted_at']}",
+            f"部門：{record['department_name']}｜訪談人員：{record['person_name']}",
+            f"主測系統：{record['main_system']}｜主測角色：{record['main_role']}",
+        ]
+
+        for item in record["questionnaire_items"]:
+            lines.append(f"- {item['label']}：{item['value']}")
+
+        for line in lines:
+            if y < 45:
+                pdf.showPage()
+                pdf.setFont("STSong-Light", 10)
+                y = page_height - 40
+            pdf.drawString(left, y, line[:120])
+            y -= 14
+
+        y -= 6
+
+    pdf.save()
+    return buffer.getvalue()
+
 
 def print_startup_info() -> None:
     print("=" * 60)
@@ -239,13 +351,11 @@ def print_startup_info() -> None:
     print("=" * 60)
 
 
-
 def get_index_parts(label: str) -> tuple[str | None, str | None]:
     matched = INDEX_PATTERN.match(label.strip())
     if not matched:
         return None, None
     return matched.group("main"), matched.group("sub")
-
 
 
 def build_questionnaire_rows(fields: list[dict]) -> list[list[dict]]:
@@ -288,57 +398,45 @@ def build_questionnaire_rows(fields: list[dict]) -> list[list[dict]]:
     return rows
 
 
-
 def init_db() -> None:
     with sqlite3.connect(DB_PATH) as conn:
+        existing_columns = conn.execute("PRAGMA table_info(responses)").fetchall()
+        if existing_columns:
+            expected_columns = {
+                "id",
+                "survey_slug",
+                "department_name",
+                "person_name",
+                "answers_json",
+                "submitted_at",
+            }
+            current_columns = {column[1] for column in existing_columns}
+            if current_columns != expected_columns:
+                conn.execute("DROP TABLE responses")
+
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS responses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 survey_slug TEXT NOT NULL,
-                client_token TEXT NOT NULL,
+                department_name TEXT NOT NULL,
+                person_name TEXT NOT NULL,
                 answers_json TEXT NOT NULL,
                 submitted_at TEXT NOT NULL,
-                UNIQUE(survey_slug, client_token)
+                UNIQUE(survey_slug, department_name, person_name)
             )
             """
         )
         conn.commit()
 
 
-
 def now() -> datetime:
     return datetime.now()
-
 
 
 def is_survey_open() -> bool:
     current = now()
     return OPEN_START_AT <= current <= OPEN_END_AT
-
-
-
-def get_client_token() -> str:
-    token = request.cookies.get(COOKIE_NAME)
-    return token if token else str(uuid.uuid4())
-
-
-
-def get_existing_answers(client_token: str) -> dict:
-    with sqlite3.connect(DB_PATH) as conn:
-        row = conn.execute(
-            "SELECT answers_json FROM responses WHERE survey_slug = ? AND client_token = ?",
-            (SURVEY_SLUG, client_token),
-        ).fetchone()
-
-    if not row:
-        return {}
-
-    try:
-        return json.loads(row[0])
-    except json.JSONDecodeError:
-        return {}
-
 
 
 def collect_answers(fields: list[dict]) -> dict:
@@ -362,36 +460,34 @@ def collect_answers(fields: list[dict]) -> dict:
     return payload
 
 
-
-def upsert_response(client_token: str, answers: dict) -> None:
+def upsert_response(answers: dict) -> None:
+    department_name = str(answers.get("department_name", "")).strip()
+    person_name = str(answers.get("person_name", "")).strip()
     submitted_at = now().isoformat(timespec="seconds")
+
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute(
             """
-            INSERT INTO responses (survey_slug, client_token, answers_json, submitted_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(survey_slug, client_token)
+            INSERT INTO responses (survey_slug, department_name, person_name, answers_json, submitted_at)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(survey_slug, department_name, person_name)
             DO UPDATE SET answers_json = excluded.answers_json,
                           submitted_at = excluded.submitted_at
             """,
-            (SURVEY_SLUG, client_token, json.dumps(answers, ensure_ascii=False), submitted_at),
+            (SURVEY_SLUG, department_name, person_name, json.dumps(answers, ensure_ascii=False), submitted_at),
         )
         conn.commit()
 
 
-
-def apply_common_cookies(response, client_token: str, lang: str):
-    response.set_cookie(COOKIE_NAME, client_token, max_age=60 * 60 * 24 * 365)
+def apply_common_cookies(response, lang: str):
     response.set_cookie(LANG_COOKIE_NAME, lang, max_age=60 * 60 * 24 * 365)
     return response
-
 
 
 @app.get("/")
 def home():
     lang = get_lang()
     return redirect(url_for("survey", slug=SURVEY_SLUG, lang=lang))
-
 
 
 @app.route("/q/<slug>", methods=["GET", "POST"])
@@ -423,14 +519,37 @@ def survey(slug: str):
             ),
             410,
         )
-        return apply_common_cookies(response, get_client_token(), lang)
+        return apply_common_cookies(response, lang)
 
-    client_token = get_client_token()
     localized_fields = localize_form_definition(lang)
+    basic_fields = [field for field in localized_fields if field.get("section") == "basic"]
+    questionnaire_fields = [field for field in localized_fields if field.get("section") != "basic"]
+    questionnaire_rows = build_questionnaire_rows(questionnaire_fields)
 
     if request.method == "POST":
         answers = collect_answers(localized_fields)
-        upsert_response(client_token, answers)
+        department_name = str(answers.get("department_name", "")).strip()
+        person_name = str(answers.get("person_name", "")).strip()
+
+        if not department_name or not person_name:
+            response = make_response(
+                render_template(
+                    "form.html",
+                    html_lang=get_html_lang(lang),
+                    survey_title=tr(SURVEY_TITLE, lang),
+                    basic_fields=basic_fields,
+                    questionnaire_rows=questionnaire_rows,
+                    existing=answers,
+                    open_window_parts=open_window_parts,
+                    ui=ui,
+                    lang_urls=lang_urls,
+                    current_lang=lang,
+                    error_message="請先填寫訪談部門與訪談人員，系統才可判斷更新或新增。",
+                )
+            )
+            return apply_common_cookies(response, lang)
+
+        upsert_response(answers)
 
         response = make_response(
             render_template(
@@ -444,12 +563,7 @@ def survey(slug: str):
                 current_lang=lang,
             )
         )
-        return apply_common_cookies(response, client_token, lang)
-
-    existing_answers = get_existing_answers(client_token)
-    basic_fields = [field for field in localized_fields if field.get("section") == "basic"]
-    questionnaire_fields = [field for field in localized_fields if field.get("section") != "basic"]
-    questionnaire_rows = build_questionnaire_rows(questionnaire_fields)
+        return apply_common_cookies(response, lang)
 
     response = make_response(
         render_template(
@@ -458,18 +572,71 @@ def survey(slug: str):
             survey_title=tr(SURVEY_TITLE, lang),
             basic_fields=basic_fields,
             questionnaire_rows=questionnaire_rows,
-            existing=existing_answers,
+            existing={},
             open_window_parts=open_window_parts,
             ui=ui,
             lang_urls=lang_urls,
             current_lang=lang,
+            error_message="",
         )
     )
-    return apply_common_cookies(response, client_token, lang)
+    return apply_common_cookies(response, lang)
 
+
+@app.get("/admin/report")
+def admin_report():
+    records = get_report_records()
+    summary = build_report_summary(records)
+
+    return render_template(
+        "admin_report.html",
+        survey_title=SURVEY_TITLE,
+        summary=summary,
+        records=records,
+        export_url=url_for("admin_report_export_csv"),
+        export_pdf_url=url_for("admin_report_export_pdf"),
+    )
+
+
+@app.get("/admin/report/export.csv")
+def admin_report_export_csv():
+    records = get_report_records()
+    payload = build_report_csv(records)
+    filename = f"survey-report-{datetime.now():%Y%m%d-%H%M%S}.csv"
+
+    response = make_response(payload)
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
+@app.get("/admin/report/export.pdf")
+def admin_report_export_pdf():
+    records = get_report_records()
+    summary = build_report_summary(records)
+    payload = build_report_pdf(records, summary)
+    filename = f"survey-report-{datetime.now():%Y%m%d-%H%M%S}.pdf"
+
+    response = make_response(payload)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
+
+
+@app.post("/admin/report/delete/<int:record_id>")
+def admin_report_delete_one(record_id: int):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "DELETE FROM responses WHERE survey_slug = ? AND id = ?",
+            (SURVEY_SLUG, record_id),
+        )
+        conn.commit()
+
+    return redirect(url_for("admin_report"))
 
 
 if __name__ == "__main__":
     init_db()
     print_startup_info()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    auto_reload = os.getenv("SURVEY_AUTO_RELOAD", "1") == "1"
+    app.run(host="0.0.0.0", port=5000, debug=auto_reload, use_reloader=auto_reload)

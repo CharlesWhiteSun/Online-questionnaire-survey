@@ -51,7 +51,7 @@ CLOSED_MESSAGE_BODY = (
     "若您仍需補填或更新內容，請聯繫問卷管理者協助重新開放。"
 )
 
-SUCCESS_MESSAGE = "已成功儲存。若您再次開啟同一連結並提交，系統會覆寫您先前的內容。"
+SUCCESS_MESSAGE = "已成功儲存。系統會依照部門與訪談人員判斷為更新或新增。"
 
 FORM_DEFINITION = [
     {

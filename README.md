@@ -21,6 +21,17 @@ pip install -r requirements.txt
 python app.py
 ```
 
+預設已啟用開發自動重啟（修改 Python/模板後會自動套用）：
+- 啟用（預設）：`SURVEY_AUTO_RELOAD=1`
+- 關閉：`SURVEY_AUTO_RELOAD=0`
+
+PowerShell 臨時關閉範例：
+
+```powershell
+$env:SURVEY_AUTO_RELOAD="0"
+python app.py
+```
+
 預設會監聽：
 - `http://127.0.0.1:5000`
 - 區網可用：`http://<你的內網IP>:5000`
@@ -65,3 +76,9 @@ python app.py
 - 也可透過網址參數切換：
 	- `http://<你的內網IP>:5000/q/at?lang=zh-TW`
 	- `http://<你的內網IP>:5000/q/at?lang=en`
+
+## 8) 管理者報表與匯出
+
+- 管理者報表頁：`http://<你的內網IP>:5000/admin/report`
+- 匯出 CSV：在報表頁右上點「匯出 CSV」，或直接開 `http://<你的內網IP>:5000/admin/report/export.csv`
+- 報表頁會顯示：提交總筆數、部門數、最新提交時間、每筆問卷明細（可展開）

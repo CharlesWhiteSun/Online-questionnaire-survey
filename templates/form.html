@@ -168,6 +168,15 @@
     }
     .window-separator { color: var(--text-subtle); font-weight: 600; padding: 0 2px; }
     .page-stack { display: grid; gap: var(--block-gap); }
+    .error-item {
+      border: 1px solid #f3b3b3;
+      background: #fff1f1;
+      color: #8f1d1d;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
     .reminder-item {
       margin-top: 0;
       border: 1px solid var(--border-reminder);
@@ -320,6 +329,9 @@
       </div>
     </div>
     <div class="page-stack">
+      {% if error_message %}
+      <div class="error-item">{{ error_message }}</div>
+      {% endif %}
       <div class="meta">
         <div>{{ ui.open_time_label }}：</div>
         <div class="metric-window">
@@ -425,6 +437,7 @@
     document.querySelectorAll('[data-collapse-toggle]').forEach((button) => {
       button.addEventListener('click', () => toggleCard(button));
     });
+
   </script>
 </body>
 </html>
