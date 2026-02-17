@@ -40,8 +40,97 @@ EN_TRANSLATIONS = {
     "問卷填寫時間已結束": "Survey Submission Window Closed",
     "本問卷已超過填寫期限，系統已停止收件。若您仍需補填或更新內容，請聯繫問卷管理者協助重新開放。": "This survey is past its submission deadline and is no longer accepting responses. If you still need to submit or update your response, please contact the survey administrator to reopen it.",
     "已成功儲存。若您再次開啟同一連結並提交，系統會覆寫您先前的內容。": "Saved successfully.",
+    "已成功儲存。系統會依照部門與訪談人員判斷為更新或新增。": "Saved successfully. The system decides whether to update or create based on Department and Interviewee.",
     "找不到問卷": "Survey not found",
+    "訪談部門/人員": "Interview Department / Interviewee",
+    "訪談部門": "Department",
+    "例如：研發部": "e.g. Engineering Department",
+    "訪談人員": "Interviewee",
+    "例如：王小明": "e.g. Alex Wang",
+    "主測系統/角色": "Primary System / Role",
+    "主測系統": "Primary System",
+    "例如：ERP": "e.g. ERP",
+    "主測角色": "Primary Role",
+    "例如：審核者": "e.g. Reviewer",
+    "1. 自動化核心流程": "1. Automation Core Flows",
+    "登入→主功能操作→送出": "Login → Main Action → Submit",
+    "查詢→檢視→匯出": "Search → View → Export",
+    "新增→送審→審核完成": "Create → Submit for Approval → Approved",
+    "編輯→儲存→結果確認": "Edit → Save → Verify Result",
+    "2. 測試類型需求": "2. Required Test Types",
+    "Web UI 黑箱流程測試（End-to-End）": "Web UI Black-box Flow Testing (End-to-End)",
+    "多角色權限測試（Admin/User）": "Multi-role Permission Testing (Admin/User)",
+    "API 測試（非 UI）": "API Testing (Non-UI)",
+    "效能測試（壓力/負載）": "Performance Testing (Stress/Load)",
+    "安全測試（弱掃/登入防護）": "Security Testing (Vulnerability Scan/Login Protection)",
+    "3. 操作情境需求": "3. Required Operation Scenarios",
+    "驗證碼（Captcha）": "Captcha",
+    "OTP/簡訊驗證": "OTP / SMS Verification",
+    "SSO/第三方登入": "SSO / Third-party Login",
+    "多步驟表單": "Multi-step Form",
+    "彈跳視窗": "Pop-up Dialog",
+    "多頁籤操作": "Multi-tab Operations",
+    "檔案上傳": "File Upload",
+    "Excel/PDF 匯出": "Excel/PDF Export",
+    "4-1. 測試執行頻率": "4-1. Test Execution Frequency",
+    "改版前": "Before Release",
+    "每日定期跑": "Run Daily on Schedule",
+    "手動觸發即可": "Manual Trigger is Enough",
+    "需可指定 tag 版本驗證": "Need Validation by Specific Tag Version",
+    "4-2. 測試執行環境": "4-2. Test Execution Environment",
+    "測試環境（Demo）": "Testing Environment (Demo)",
+    "驗收環境（UAT）": "User Acceptance Environment (UAT)",
+    "正式環境（Prod）": "Production Environment (Prod)",
+    "本機即可": "Local Machine is Enough",
+    "5-1. 瀏覽器需求": "5-1. Browser Requirements",
+    "Chrome": "Chrome",
+    "Edge": "Edge",
+    "Firefox": "Firefox",
+    "Safari": "Safari",
+    "5-2. 裝置需求": "5-2. Device Requirements",
+    "PC Web": "PC Web",
+    "Mobile Web/APP": "Mobile Web/APP",
+    "需跨解析度測試": "Need Cross-resolution Testing",
+    "6-1. 測試角色需求": "6-1. Test Role Requirements",
+    "一般使用者": "General User",
+    "管理者 Admin": "Administrator (Admin)",
+    "審核者 Reviewer": "Reviewer",
+    "多部門角色切換": "Multi-department Role Switching",
+    "6-2. 帳號方式": "6-2. Account Setup",
+    "使用系統內建帳號": "Use Built-in System Accounts",
+    "提供固定測試帳號": "Provide Fixed Test Accounts",
+    "測試工具需自動建立帳號": "Testing Tool Must Auto-create Accounts",
+    "7. 報告與管理需求": "7. Reporting & Management Needs",
+    "自動測試報告（Pass/Fail）": "Automated Test Report (Pass/Fail)",
+    "測試截圖紀錄": "Test Screenshot Records",
+    "測試影片錄製": "Test Video Recording",
+    "回歸測試覆蓋清單": "Regression Coverage Checklist",
+    "管理者摘要報表": "Manager Summary Report",
+    "8. 整合需求": "8. Integration Needs",
+    "Github": "GitHub",
+    "Email 通知": "Email Notifications",
+    "API": "API",
+    "9-1. PoC 規模選擇": "9-1. PoC Scope Selection",
+    "單一流程驗證（1 條流程即可）": "Single Flow Verification (1 flow)",
+    "小型流程組合（2–3 條核心流程）": "Small Flow Set (2–3 core flows)",
+    "單一模組回歸測試（5–10 條案例）": "Single Module Regression (5–10 cases)",
+    "跨模組整合流程（包含多部門操作）": "Cross-module Integrated Flows (multi-department)",
+    "全系統自動化（不建議 PoC）": "Full-system Automation (Not Recommended for PoC)",
+    "9-2. PoC 驗收標準": "9-2. PoC Acceptance Criteria",
+    "核心流程可穩定重複執行": "Core flows can run repeatedly and stably",
+    "改版後可快速回歸驗證": "Fast regression validation after each release",
+    "測試結果可產出報告": "Test results can generate reports",
+    "團隊可自行維護腳本": "Team can maintain scripts independently",
+    "可作為後續擴大導入基礎": "Can serve as a foundation for scaled adoption",
+    "補充說明": "Additional Notes",
+    "可填寫其他需求、限制或補充背景": "You can add other requirements, constraints, or background details",
     "其他：請填寫": "Other: please specify",
+    "其他：": "Other:",
+    "提交時間": "Submitted",
+    "部門": "Department",
+    "訪談人員": "Interviewee",
+    "主測系統": "Primary System",
+    "主測角色": "Primary Role",
 }
 
 
@@ -103,6 +192,49 @@ def build_ui_texts(lang: str) -> dict:
         "submit_button": "送出/更新",
         "back_to_form": "回到問卷頁",
         "survey_label": "問卷",
+        "lang_zh": "中文",
+        "lang_en": "EN",
+    }
+
+
+def build_admin_ui_texts(lang: str) -> dict:
+    if lang == "en":
+        return {
+            "page_title": "Admin Report",
+            "total_submissions": "Total Submissions",
+            "department_count": "Departments",
+            "latest_submitted_at": "Latest Submitted At",
+            "basic_section": "Basic Information",
+            "questionnaire_section": "Questionnaire Details",
+            "empty_text": "No submissions yet. Please submit the survey first.",
+            "tag_submitted": "Submitted",
+            "tag_department": "Department",
+            "tag_person": "Interviewee",
+            "tag_system": "Primary System",
+            "tag_role": "Primary Role",
+            "delete_aria": "Delete this record",
+            "delete_confirm_template": "Are you sure you want to delete the data for Department {department}, Interviewee {person}?",
+            "unknown_text": "Unknown",
+            "lang_zh": "中文",
+            "lang_en": "EN",
+        }
+
+    return {
+        "page_title": "管理者報表",
+        "total_submissions": "提交總筆數",
+        "department_count": "部門數",
+        "latest_submitted_at": "最新提交時間",
+        "basic_section": "基本資料",
+        "questionnaire_section": "問卷內容",
+        "empty_text": "目前沒有提交資料，可先填寫問卷後再查看此頁。",
+        "tag_submitted": "提交時間",
+        "tag_department": "部門",
+        "tag_person": "訪談人員",
+        "tag_system": "主測系統",
+        "tag_role": "主測角色",
+        "delete_aria": "刪除此筆資料",
+        "delete_confirm_template": "確認要刪除此 {department} 部門 {person} 人員的資料嗎?",
+        "unknown_text": "未知",
         "lang_zh": "中文",
         "lang_en": "EN",
     }
@@ -177,6 +309,7 @@ def build_report_definition() -> list[dict]:
                 "name": field["name"],
                 "label": field["label"],
                 "allow_other": field.get("allow_other", False),
+                "options": field.get("options", []),
             }
         )
 
@@ -193,25 +326,56 @@ def format_report_datetime(value: str) -> str:
         return value
 
 
-def format_report_value(entry: dict, answers: dict) -> str:
+def normalize_option_key(value: str) -> str:
+    key = str(value).strip()
+    for token in ["→", "-", "—", "（", "）", "(", ")", "/", " ", "	", "\n", "：", ":", "_", "\u3000"]:
+        key = key.replace(token, "")
+    return key.lower()
+
+
+def canonicalize_selected_option(entry: dict, raw_value: str) -> str:
+    options = entry.get("options", [])
+    if not options:
+        return raw_value
+
+    raw_norm = normalize_option_key(raw_value)
+    if not raw_norm:
+        return raw_value
+
+    for option in options:
+        if raw_value == option:
+            return option
+        if raw_norm == normalize_option_key(option):
+            return option
+
+    return raw_value
+
+
+def format_report_value(entry: dict, answers: dict, lang: str) -> str:
     if entry["type"] == "multiselect":
         selected = answers.get(entry["name"], [])
         if not isinstance(selected, list):
             selected = [str(selected)] if str(selected).strip() else []
-        selected_values = [str(item).strip() for item in selected if str(item).strip()]
+        selected_values = []
+        for item in selected:
+            raw_item = str(item).strip()
+            if not raw_item:
+                continue
+            canonical_item = canonicalize_selected_option(entry, raw_item)
+            selected_values.append(tr(canonical_item, lang))
 
         if entry.get("allow_other"):
             other_value = str(answers.get(f"{entry['name']}_other", "")).strip()
             if other_value:
-                selected_values.append(f"其他：{other_value}")
+                selected_values.append(f"{tr('其他：', lang)} {other_value}")
 
         return "；".join(selected_values) if selected_values else "—"
 
     text_value = str(answers.get(entry["name"], "")).strip()
-    return text_value if text_value else "—"
+    return tr(text_value, lang) if text_value else "—"
 
 
-def get_report_records() -> list[dict]:
+def get_report_records(lang: str = "zh-TW") -> list[dict]:
     with sqlite3.connect(DB_PATH) as conn:
         rows = conn.execute(
             """
@@ -233,7 +397,7 @@ def get_report_records() -> list[dict]:
         basic_items = []
         questionnaire_items = []
         for entry in REPORT_DEFINITION:
-            item = {"label": entry["label"], "value": format_report_value(entry, answers)}
+            item = {"label": tr(entry["label"], lang), "value": format_report_value(entry, answers, lang)}
             if entry["section"] == "basic":
                 basic_items.append(item)
             else:
@@ -291,7 +455,7 @@ def build_report_csv(records: list[dict]) -> str:
             record["main_system"],
             record["main_role"],
         ]
-        row.extend(format_report_value(entry, record["answers"]) for entry in detail_entries)
+        row.extend(format_report_value(entry, record["answers"], "zh-TW") for entry in detail_entries)
         writer.writerow(row)
 
     return "\ufeff" + output.getvalue()
@@ -585,17 +749,29 @@ def survey(slug: str):
 
 @app.get("/admin/report")
 def admin_report():
-    records = get_report_records()
+    lang = get_lang()
+    admin_ui = build_admin_ui_texts(lang)
+    records = get_report_records(lang)
     summary = build_report_summary(records)
 
-    return render_template(
-        "admin_report.html",
-        survey_title=SURVEY_TITLE,
-        summary=summary,
-        records=records,
-        export_url=url_for("admin_report_export_csv"),
-        export_pdf_url=url_for("admin_report_export_pdf"),
+    response = make_response(
+        render_template(
+            "admin_report.html",
+            html_lang=get_html_lang(lang),
+            current_lang=lang,
+            admin_ui=admin_ui,
+            survey_title=tr(SURVEY_TITLE, lang),
+            summary=summary,
+            records=records,
+            export_url=url_for("admin_report_export_csv", lang=lang),
+            export_pdf_url=url_for("admin_report_export_pdf", lang=lang),
+            lang_urls={
+                "zh-TW": url_for("admin_report", lang="zh-TW"),
+                "en": url_for("admin_report", lang="en"),
+            },
+        )
     )
+    return apply_common_cookies(response, lang)
 
 
 @app.get("/admin/report/export.csv")

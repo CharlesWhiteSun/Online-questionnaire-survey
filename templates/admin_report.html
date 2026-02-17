@@ -1,15 +1,54 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="{{ html_lang }}" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>管理者報表</title>
   <style>
+    :root {
+      --bg-page: #f6f8fa;
+      --text-main: #1f2328;
+      --text-subtle: #57606a;
+      --bg-surface: #ffffff;
+      --border-soft: #d8dee4;
+      --bg-subtle: #f6f8fa;
+      --bg-tag: #eef6ff;
+      --border-tag: #cce1ff;
+      --theme-light: #9ec5ff;
+      --theme-forest: #3d7a5f;
+      --theme-dark: #394553;
+    }
+    html[data-theme="forest"] {
+      --bg-page: #eaf3ee;
+      --text-main: #17241f;
+      --text-subtle: #355246;
+      --bg-surface: #f7fbf8;
+      --border-soft: #b9cec2;
+      --bg-subtle: #edf5ef;
+      --bg-tag: #e6f2eb;
+      --border-tag: #bad5c6;
+      --theme-light: #9ec5ff;
+      --theme-forest: #3d7a5f;
+      --theme-dark: #394553;
+    }
+    html[data-theme="dark"] {
+      --bg-page: #11161c;
+      --text-main: #e6edf3;
+      --text-subtle: #a8b3bf;
+      --bg-surface: #1a2129;
+      --border-soft: #34404d;
+      --bg-subtle: #1f2a35;
+      --bg-tag: #253545;
+      --border-tag: #3f5870;
+      --theme-light: #a2c5ff;
+      --theme-forest: #6db192;
+      --theme-dark: #b9c4d0;
+    }
     body {
       margin: 0;
-      background: #f6f8fa;
+      background: var(--bg-page);
       font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
-      color: #1f2328;
+      color: var(--text-main);
     }
     .wrap {
       max-width: 1100px;
@@ -19,14 +58,52 @@
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       margin-bottom: 16px;
     }
     .header h1 {
       margin: 0;
       font-size: 26px;
+      line-height: 1.35;
     }
+    .title-block { flex: 1 1 auto; min-width: 0; }
+    .title-block h1 { word-break: break-word; }
+    .control-panel { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .lang-switch { display: inline-flex; gap: 6px; }
+    .lang-btn {
+      text-decoration: none;
+      color: var(--text-main);
+      border: 1px solid var(--border-soft);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 13px;
+      background: var(--bg-surface);
+    }
+    .lang-btn.active { font-weight: 600; background: var(--bg-subtle); }
+    .theme-switch { display: inline-flex; gap: 6px; }
+    .theme-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .theme-btn.active {
+      box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--border-soft);
+    }
+    .theme-btn[data-theme-option="light"] { color: var(--theme-light); }
+    .theme-btn[data-theme-option="forest"] { color: var(--theme-forest); }
+    .theme-btn[data-theme-option="dark"] { color: var(--theme-dark); }
     .export-btn {
       text-decoration: none;
       background: #3f8b56;
@@ -44,7 +121,7 @@
     .pdf-btn:hover {
       background: #b4766d;
     }
-    .toolbar { display: inline-flex; gap: 8px; align-items: center; }
+    .toolbar { display: inline-flex; gap: 8px; align-items: center; margin-top: 8px; }
 
     .summary-grid {
       display: grid;
@@ -53,17 +130,17 @@
       margin-bottom: 16px;
     }
     .summary-card {
-      background: #fff;
-      border: 1px solid #d8dee4;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
       border-radius: 10px;
       padding: 12px;
     }
-    .summary-title { color: #57606a; font-size: 13px; margin-bottom: 6px; }
+    .summary-title { color: var(--text-subtle); font-size: 13px; margin-bottom: 6px; }
     .summary-value { font-size: 24px; font-weight: 700; }
 
     .record {
-      background: #fff;
-      border: 1px solid #d8dee4;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-soft);
       border-radius: 10px;
       margin-bottom: 12px;
       overflow: hidden;
@@ -71,8 +148,8 @@
     .record-summary {
       cursor: pointer;
       padding: 12px 14px;
-      background: #f6f8fa;
-      border-bottom: 1px solid #e2e8f0;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-soft);
       display: flex;
       flex-wrap: wrap;
       gap: 10px 18px;
@@ -83,8 +160,8 @@
     .tag {
       display: inline-flex;
       align-items: center;
-      background: #eef6ff;
-      border: 1px solid #cce1ff;
+      background: var(--bg-tag);
+      border: 1px solid var(--border-tag);
       border-radius: 999px;
       padding: 4px 10px;
       font-size: 12px;
@@ -125,7 +202,7 @@
       align-items: start;
     }
     .k {
-      color: #57606a;
+      color: var(--text-subtle);
       font-size: 13px;
       font-weight: 600;
       padding-top: 2px;
@@ -136,42 +213,56 @@
       line-height: 1.45;
     }
     .empty {
-      background: #fff;
-      border: 1px dashed #c8d1dc;
+      background: var(--bg-surface);
+      border: 1px dashed var(--border-soft);
       border-radius: 10px;
       padding: 18px;
-      color: #57606a;
+      color: var(--text-subtle);
     }
 
     @media (max-width: 900px) {
       .summary-grid { grid-template-columns: 1fr; }
       .kv-grid { grid-template-columns: 1fr; }
-      .header { flex-direction: column; align-items: flex-start; }
+      .header { flex-direction: column; align-items: stretch; }
+      .control-panel { align-items: flex-end; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
-      <h1>管理者報表｜{{ survey_title }}</h1>
-      <div class="toolbar">
-        <a class="export-btn" href="{{ export_url }}">CSV</a>
-        <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">PDF</a>
+      <div class="title-block">
+        <h1>{{ admin_ui.page_title }}｜{{ survey_title }}</h1>
+      </div>
+      <div class="control-panel">
+        <div class="lang-switch">
+          <a class="lang-btn {% if current_lang == 'zh-TW' %}active{% endif %}" href="{{ lang_urls['zh-TW'] }}">{{ admin_ui.lang_zh }}</a>
+          <a class="lang-btn {% if current_lang == 'en' %}active{% endif %}" href="{{ lang_urls['en'] }}">{{ admin_ui.lang_en }}</a>
+        </div>
+        <div class="theme-switch" aria-label="theme switcher">
+          <button class="theme-btn" type="button" data-theme-option="light" aria-label="light theme">O</button>
+          <button class="theme-btn" type="button" data-theme-option="forest" aria-label="forest theme">O</button>
+          <button class="theme-btn" type="button" data-theme-option="dark" aria-label="dark theme">O</button>
+        </div>
       </div>
     </div>
 
     <div class="summary-grid">
       <div class="summary-card">
-        <div class="summary-title">提交總筆數</div>
+        <div class="summary-title">{{ admin_ui.total_submissions }}</div>
         <div class="summary-value">{{ summary.total_submissions }}</div>
       </div>
       <div class="summary-card">
-        <div class="summary-title">部門數</div>
+        <div class="summary-title">{{ admin_ui.department_count }}</div>
         <div class="summary-value">{{ summary.department_count }}</div>
       </div>
       <div class="summary-card">
-        <div class="summary-title">最新提交時間</div>
+        <div class="summary-title">{{ admin_ui.latest_submitted_at }}</div>
         <div class="summary-value" style="font-size: 18px;">{{ summary.latest_submitted_at }}</div>
+        <div class="toolbar">
+          <a class="export-btn" href="{{ export_url }}">CSV</a>
+          <a class="export-btn pdf-btn" href="{{ export_pdf_url }}">PDF</a>
+        </div>
       </div>
     </div>
 
@@ -179,20 +270,20 @@
       {% for record in records %}
       <details class="record" {% if loop.first %}open{% endif %}>
         <summary class="record-summary">
-          <span class="tag">提交時間：{{ record.submitted_at }}</span>
-          <span class="tag">部門：{{ record.department_name }}</span>
-          <span class="tag">訪談人員：{{ record.person_name }}</span>
-          <span class="tag">主測系統：{{ record.main_system }}</span>
-          <span class="tag">主測角色：{{ record.main_role }}</span>
+          <span class="tag">{{ admin_ui.tag_submitted }}：{{ record.submitted_at }}</span>
+          <span class="tag">{{ admin_ui.tag_department }}：{{ record.department_name }}</span>
+          <span class="tag">{{ admin_ui.tag_person }}：{{ record.person_name }}</span>
+          <span class="tag">{{ admin_ui.tag_system }}：{{ record.main_system }}</span>
+          <span class="tag">{{ admin_ui.tag_role }}：{{ record.main_role }}</span>
         </summary>
         <div class="record-content">
           <div class="record-tools">
             <form method="post" action="{{ url_for('admin_report_delete_one', record_id=record.id) }}" data-department="{{ record.department_name }}" data-person="{{ record.person_name }}" onsubmit="return confirmDeleteRecord(this);">
-              <button type="submit" class="delete-one-btn" aria-label="刪除此筆資料" title="刪除此筆資料">🗑</button>
+              <button type="submit" class="delete-one-btn" aria-label="{{ admin_ui.delete_aria }}" title="{{ admin_ui.delete_aria }}">🗑</button>
             </form>
           </div>
           <div>
-            <h3 class="section-title">基本資料</h3>
+            <h3 class="section-title">{{ admin_ui.basic_section }}</h3>
             <div class="kv-grid">
               {% for item in record.basic_items %}
               <div class="k">{{ item.label }}</div>
@@ -202,7 +293,7 @@
           </div>
 
           <div>
-            <h3 class="section-title">問卷內容</h3>
+            <h3 class="section-title">{{ admin_ui.questionnaire_section }}</h3>
             <div class="kv-grid">
               {% for item in record.questionnaire_items %}
               <div class="k">{{ item.label }}</div>
@@ -214,15 +305,38 @@
       </details>
       {% endfor %}
     {% else %}
-      <div class="empty">目前沒有提交資料，可先填寫問卷後再查看此頁。</div>
+      <div class="empty">{{ admin_ui.empty_text }}</div>
     {% endif %}
   </div>
 
 <script>
+  function applyTheme(themeName) {
+    const validThemes = ['light', 'forest', 'dark'];
+    const resolvedTheme = validThemes.includes(themeName) ? themeName : 'light';
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    localStorage.setItem('survey-theme', resolvedTheme);
+
+    document.querySelectorAll('[data-theme-option]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.themeOption === resolvedTheme);
+    });
+  }
+
+  const savedTheme = localStorage.getItem('survey-theme') || 'light';
+  applyTheme(savedTheme);
+
+  document.querySelectorAll('[data-theme-option]').forEach((button) => {
+    button.addEventListener('click', () => applyTheme(button.dataset.themeOption));
+  });
+
+  const deleteConfirmTemplate = {{ admin_ui.delete_confirm_template | tojson }};
+  const unknownText = {{ admin_ui.unknown_text | tojson }};
+
   function confirmDeleteRecord(formElement) {
-    const department = formElement.dataset.department || '未知';
-    const person = formElement.dataset.person || '未知';
-    const message = `確認要刪除此 ${department} 部門 ${person} 人員的資料嗎?`;
+    const department = formElement.dataset.department || unknownText;
+    const person = formElement.dataset.person || unknownText;
+    const message = deleteConfirmTemplate
+      .replace('{department}', department)
+      .replace('{person}', person);
     return window.confirm(message);
   }
 </script>

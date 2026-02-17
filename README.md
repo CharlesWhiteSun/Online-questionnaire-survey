@@ -57,7 +57,7 @@ python app.py
 
 - SQLite 資料庫檔：`survey.db`
 - 表格：`responses`
-- 以 `(survey_slug, client_token)` 唯一鍵覆寫更新
+- 以 `(survey_slug, department_name, person_name)` 唯一鍵覆寫更新
 
 ## 5) 欄位拆分
 
@@ -82,3 +82,18 @@ python app.py
 - 管理者報表頁：`http://<你的內網IP>:5000/admin/report`
 - 匯出 CSV：在報表頁右上點「匯出 CSV」，或直接開 `http://<你的內網IP>:5000/admin/report/export.csv`
 - 報表頁會顯示：提交總筆數、部門數、最新提交時間、每筆問卷明細（可展開）
+
+## 9) 自動化測試（必跑）
+
+每次修改程式碼（包含模板、共用函式、路由）前後，都應新增或更新對應測試，並執行完整測試避免破壞既有功能。
+
+執行測試：
+
+```powershell
+python -m pytest -q
+```
+
+目前測試重點包含：
+- 舊資料選項值正規化（例如：`登入主功能操作送出`）
+- 英文管理頁標題與選項翻譯
+- CSV 匯出路徑與內容正規化
