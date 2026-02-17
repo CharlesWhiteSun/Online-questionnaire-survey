@@ -226,6 +226,10 @@ def build_admin_ui_texts(lang: str) -> dict:
             "compact_panel_title": "Compact Questionnaire List",
             "compact_panel_toggle": "Collapse list",
             "detail_panel_toggle": "Collapse details",
+            "per_page_label": "Rows per page",
+            "page_label": "Page",
+            "prev_page": "Prev",
+            "next_page": "Next",
             "delete_aria": "Delete this record",
             "delete_confirm_template": "Are you sure you want to delete the data for Department {department}, Interviewee {person}?",
             "unknown_text": "Unknown",
@@ -258,6 +262,10 @@ def build_admin_ui_texts(lang: str) -> dict:
         "compact_panel_title": "簡要問卷列表",
         "compact_panel_toggle": "收合列表",
         "detail_panel_toggle": "收合內容",
+        "per_page_label": "每頁筆數",
+        "page_label": "頁次",
+        "prev_page": "上一頁",
+        "next_page": "下一頁",
         "delete_aria": "刪除此筆資料",
         "delete_confirm_template": "確認要刪除此 {department} 部門 {person} 人員的資料嗎?",
         "unknown_text": "未知",
@@ -516,6 +524,26 @@ def build_available_dates(records: list[dict]) -> list[str]:
         {record.get("submitted_date", "") for record in records if record.get("submitted_date") and record.get("submitted_date") != "—"},
         reverse=True,
     )
+
+
+def normalize_positive_int(raw_value: str | None, default_value: int) -> int:
+    try:
+        parsed = int(str(raw_value))
+        return parsed if parsed > 0 else default_value
+    except (TypeError, ValueError):
+        return default_value
+
+
+def paginate_records(records: list[dict], page: int, per_page: int) -> tuple[list[dict], int, int]:
+    total = len(records)
+    if total == 0:
+        return [], 1, 1
+
+    total_pages = (total + per_page - 1) // per_page
+    current_page = min(max(page, 1), total_pages)
+    start = (current_page - 1) * per_page
+    end = start + per_page
+    return records[start:end], current_page, total_pages
 
 
 def format_filter_date_value(selected_date: str, lang: str) -> str:
@@ -846,6 +874,11 @@ def admin_report():
     lang = get_lang()
     admin_ui = build_admin_ui_texts(lang)
     selected_date = request.args.get("date", "").strip()
+    page = normalize_positive_int(request.args.get("page"), 1)
+    per_page = normalize_positive_int(request.args.get("per_page"), 10)
+    allowed_per_page = [10, 20, 50]
+    if per_page not in allowed_per_page:
+        per_page = 10
     if not selected_date:
         selected_date = now().strftime("%Y-%m-%d")
 
@@ -853,6 +886,7 @@ def admin_report():
     available_dates = build_available_dates(all_records)
 
     records = filter_records_by_date(all_records, selected_date)
+    paged_records, current_page, total_pages = paginate_records(records, page, per_page)
     summary = build_report_summary(records)
     selected_date_display = format_filter_date_value(selected_date, lang)
 
@@ -864,15 +898,21 @@ def admin_report():
             admin_ui=admin_ui,
             survey_title=tr(SURVEY_TITLE, lang),
             summary=summary,
-            records=records,
+            records=paged_records,
             selected_date=selected_date,
             selected_date_display=selected_date_display,
             available_dates=available_dates,
+            current_page=current_page,
+            total_pages=total_pages,
+            per_page=per_page,
+            allowed_per_page=allowed_per_page,
             export_url=url_for("admin_report_export_csv", lang=lang),
             export_pdf_url=url_for("admin_report_export_pdf", lang=lang),
+            prev_page_url=url_for("admin_report", lang=lang, date=selected_date, page=max(current_page - 1, 1), per_page=per_page),
+            next_page_url=url_for("admin_report", lang=lang, date=selected_date, page=min(current_page + 1, total_pages), per_page=per_page),
             lang_urls={
-                "zh-TW": url_for("admin_report", lang="zh-TW", date=selected_date),
-                "en": url_for("admin_report", lang="en", date=selected_date),
+                "zh-TW": url_for("admin_report", lang="zh-TW", date=selected_date, page=current_page, per_page=per_page),
+                "en": url_for("admin_report", lang="en", date=selected_date, page=current_page, per_page=per_page),
             },
         )
     )
