@@ -28,12 +28,46 @@ from survey_config import (
 
 BASE_DIR = Path(__file__).parent
 DB_PATH = BASE_DIR / "survey.db"
+ENV_FILE_PATH = BASE_DIR / ".env"
+ENV_EXAMPLE_FILE_PATH = BASE_DIR / ".env.example"
 LANG_COOKIE_NAME = "survey_lang"
+REPORT_AUTH_COOKIE_NAME = "survey_report_auth"
+GUEST_USERNAME_ENV = "SURVEY_GUEST_USERNAME"
+GUEST_PASSWORD_ENV = "SURVEY_GUEST_PASSWORD"
+ADMIN_USERNAME_ENV = "SURVEY_ADMIN_USERNAME"
+ADMIN_PASSWORD_ENV = "SURVEY_ADMIN_PASSWORD"
 DEFAULT_LANG = "zh-TW"
 SUPPORTED_LANGS = {"zh-TW", "en"}
 
 app = Flask(__name__)
 INDEX_PATTERN = re.compile(r"^(?P<main>\d+)(?:-(?P<sub>\d+))?\.")
+
+
+def ensure_env_file(env_path: Path, example_path: Path) -> bool:
+    if env_path.exists() or not example_path.exists():
+        return False
+
+    env_path.write_text(example_path.read_text(encoding="utf-8"), encoding="utf-8")
+    return True
+
+
+def load_env_file(path: Path) -> None:
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+ENV_FILE_AUTO_CREATED = ensure_env_file(ENV_FILE_PATH, ENV_EXAMPLE_FILE_PATH)
+load_env_file(ENV_FILE_PATH)
 
 EN_TRANSLATIONS = {
     "自動化測試導入 PoC 需求訪談表": "Automation Testing Adoption PoC Needs Interview Form",
@@ -230,8 +264,15 @@ def build_admin_ui_texts(lang: str) -> dict:
             "page_label": "Page",
             "prev_page": "Prev",
             "next_page": "Next",
-            "data_export": "Export",
-            "data_import": "Import",
+            "data_export_csv": "CSV",
+            "data_export_pdf": "PDF",
+            "admin_login": "Login",
+            "admin_logout": "Logout",
+            "reset_timer": "Reset Timer",
+            "countdown_prefix": "Auto logout in",
+            "username_label": "Username",
+            "password_label": "Password",
+            "login_error": "Invalid username or password.",
             "delete_aria": "Delete this record",
             "delete_confirm_template": "Are you sure you want to delete the data for Department {department}, Interviewee {person}?",
             "unknown_text": "Unknown",
@@ -268,8 +309,15 @@ def build_admin_ui_texts(lang: str) -> dict:
         "page_label": "頁次",
         "prev_page": "上一頁",
         "next_page": "下一頁",
-        "data_export": "匯出",
-        "data_import": "匯入",
+        "data_export_csv": "CSV",
+        "data_export_pdf": "PDF",
+        "admin_login": "登入",
+        "admin_logout": "登出",
+        "reset_timer": "重製計時",
+        "countdown_prefix": "自動登出倒數",
+        "username_label": "帳號",
+        "password_label": "密碼",
+        "login_error": "帳號或密碼錯誤。",
         "delete_aria": "刪除此筆資料",
         "delete_confirm_template": "確認要刪除此 {department} 部門 {person} 人員的資料嗎?",
         "unknown_text": "未知",
@@ -711,6 +759,8 @@ def print_startup_info() -> None:
     print(f"問卷：{SURVEY_TITLE}")
     print(f"開放時間：{OPEN_START_AT:%Y-%m-%d %H:%M} ~ {OPEN_END_AT:%Y-%m-%d %H:%M}")
     print(f"短網址路徑：http://<你的內網IP>:5000/q/{SURVEY_SLUG}")
+    if ENV_FILE_AUTO_CREATED:
+        print("已自動建立 .env（由 .env.example 複製），請依需求修改帳密。")
     print("=" * 60)
 
 
@@ -851,6 +901,109 @@ def apply_common_cookies(response, lang: str):
     return response
 
 
+def get_guest_credentials() -> tuple[str, str]:
+    username = os.getenv(GUEST_USERNAME_ENV, "guest").strip() or "guest"
+    password = os.getenv(GUEST_PASSWORD_ENV, "guest").strip() or "guest"
+    return username, password
+
+
+def get_admin_credentials() -> tuple[str, str]:
+    username = os.getenv(ADMIN_USERNAME_ENV, "admin").strip() or "admin"
+    password = os.getenv(ADMIN_PASSWORD_ENV, "admin").strip() or "admin"
+    return username, password
+
+
+def build_auth_cookie_token(role: str) -> str:
+    if role == "admin":
+        _, password = get_admin_credentials()
+        return f"admin:{password}"
+
+    _, password = get_guest_credentials()
+    return f"guest:{password}"
+
+
+def set_report_auth_cookie(response, role: str):
+    response.set_cookie(REPORT_AUTH_COOKIE_NAME, build_auth_cookie_token(role), max_age=60 * 60 * 8, httponly=True)
+    return response
+
+
+def clear_report_auth_cookie(response):
+    response.delete_cookie(REPORT_AUTH_COOKIE_NAME)
+    return response
+
+
+def resolve_current_user_role() -> str | None:
+    cookie_value = request.cookies.get(REPORT_AUTH_COOKIE_NAME, "")
+    if cookie_value == build_auth_cookie_token("admin"):
+        return "admin"
+    if cookie_value == build_auth_cookie_token("guest"):
+        return "guest"
+    return None
+
+
+def ensure_report_viewer() -> bool:
+    return resolve_current_user_role() in {"guest", "admin"}
+
+
+def ensure_special_admin() -> bool:
+    return resolve_current_user_role() == "admin"
+
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    lang = get_lang()
+    ui = build_admin_ui_texts(lang)
+    next_url = request.values.get("next", "").strip() or url_for("admin_report", lang=lang)
+    if not next_url.startswith("/admin"):
+        next_url = url_for("admin_report", lang=lang)
+
+    admin_username, admin_password = get_admin_credentials()
+    guest_username, guest_password = get_guest_credentials()
+    error_message = ""
+    if request.method == "POST":
+        provided_username = request.form.get("username", "").strip()
+        provided_password = request.form.get("password", "").strip()
+        role = None
+        if provided_username == admin_username and provided_password == admin_password:
+            role = "admin"
+        elif provided_username == guest_username and provided_password == guest_password:
+            role = "guest"
+
+        if role:
+            response = make_response(redirect(next_url))
+            response = set_report_auth_cookie(response, role)
+            return apply_common_cookies(response, lang)
+
+        error_message = ui["login_error"]
+
+    response = make_response(
+        render_template(
+            "admin_login.html",
+            html_lang=get_html_lang(lang),
+            current_lang=lang,
+            lang_urls={
+                "zh-TW": url_for("admin_login", lang="zh-TW", next=next_url),
+                "en": url_for("admin_login", lang="en", next=next_url),
+            },
+            next_url=next_url,
+            title=ui["admin_login"],
+            submit_text=ui["admin_login"],
+            username_label=ui["username_label"],
+            password_label=ui["password_label"],
+            error_message=error_message,
+        )
+    )
+    return apply_common_cookies(response, lang)
+
+
+@app.post("/admin/logout")
+def admin_logout():
+    lang = get_lang()
+    response = make_response(redirect(url_for("admin_login", lang=lang)))
+    response = clear_report_auth_cookie(response)
+    return apply_common_cookies(response, lang)
+
+
 @app.get("/")
 def home():
     lang = get_lang()
@@ -953,7 +1106,14 @@ def survey(slug: str):
 @app.get("/admin/report")
 def admin_report():
     lang = get_lang()
+    if not ensure_report_viewer():
+        next_url = request.full_path.rstrip("?")
+        response = make_response(redirect(url_for("admin_login", lang=lang, next=next_url)))
+        return apply_common_cookies(response, lang)
+
+    current_role = resolve_current_user_role()
     admin_ui = build_admin_ui_texts(lang)
+    can_manage_exports = current_role == "admin"
     selected_date = request.args.get("date", "").strip()
     page = normalize_positive_int(request.args.get("page"), 1)
     per_page = normalize_positive_int(request.args.get("per_page"), 10)
@@ -987,6 +1147,11 @@ def admin_report():
             total_pages=total_pages,
             per_page=per_page,
             allowed_per_page=allowed_per_page,
+            can_manage_exports=can_manage_exports,
+            is_authenticated=bool(current_role),
+            session_timeout_seconds=600,
+            admin_login_url=url_for("admin_login", lang=lang, next=url_for("admin_report", lang=lang, date=selected_date, page=current_page, per_page=per_page)),
+            admin_logout_url=url_for("admin_logout", lang=lang),
             export_url=url_for("admin_report_export_csv", lang=lang),
             export_pdf_url=url_for("admin_report_export_pdf", lang=lang),
             prev_page_url=url_for("admin_report", lang=lang, date=selected_date, page=max(current_page - 1, 1), per_page=per_page),
@@ -1002,6 +1167,9 @@ def admin_report():
 
 @app.get("/admin/report/export.csv")
 def admin_report_export_csv():
+    if not ensure_special_admin():
+        return "Forbidden", 403
+
     records = get_report_records()
     payload = build_report_csv(records)
     filename = f"survey-report-{datetime.now():%Y%m%d-%H%M%S}.csv"
@@ -1014,6 +1182,9 @@ def admin_report_export_csv():
 
 @app.get("/admin/report/export.pdf")
 def admin_report_export_pdf():
+    if not ensure_special_admin():
+        return "Forbidden", 403
+
     records = get_report_records()
     summary = build_report_summary(records)
     payload = build_report_pdf(records, summary)
@@ -1027,13 +1198,16 @@ def admin_report_export_pdf():
 
 @app.post("/admin/report/import.csv")
 def admin_report_import_csv():
+    if not ensure_special_admin():
+        return "Forbidden", 403
+
     lang = get_lang()
     selected_date = request.form.get("date", "").strip()
     page = request.form.get("page", "1").strip()
     per_page = request.form.get("per_page", "10").strip()
 
     uploaded = request.files.get("import_file")
-    if uploaded and uploaded.filename:
+    if uploaded and uploaded.filename and uploaded.filename.lower().endswith(".csv"):
         payload = uploaded.read().decode("utf-8-sig", errors="ignore")
         import_report_csv(payload)
 
